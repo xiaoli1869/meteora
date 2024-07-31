@@ -1,0 +1,42 @@
+export default [
+  {
+    id: 81457,
+    name: "Blast",
+    symbol: "ETH",
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/BLAST.png",
+    supported: true,
+    explorer: "https://blastscan.io",
+  },
+  {
+    id: 42161,
+    name: "Arbitrum",
+    symbol: "ETH",
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/ARB.png",
+    supported: true,
+    explorer: "https://arbiscan.io",
+  },
+  {
+    id: 10,
+    name: "Optimism",
+    symbol: "ETH",
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/OP.png",
+    supported: true,
+    explorer: "https://optimistic.etherscan.io",
+  },
+  {
+    id: 137,
+    name: "Polygon",
+    symbol: "MATIC",
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/MATIC.png",
+    supported: true,
+    explorer: "https://polygonscan.com",
+  },
+  {
+    id: 185,
+    name: "Mint",
+    symbol: "ETH",
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/MINT.png",
+    supported: true,
+    explorer: "https://explorer.mintchain.io",
+  },
+];

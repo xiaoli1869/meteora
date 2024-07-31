@@ -1,0 +1,7 @@
+.ant-btn-default:not(:disabled):not(.ant-btn-disabled):hover{
+    color: initial;
+    border: 0px;
+}
+.ant-btn.ant-btn-loading{
+    opacity: 1;
+}
