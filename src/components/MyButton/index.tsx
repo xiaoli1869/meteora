@@ -5,16 +5,20 @@ type propsType = {
   disabled?: boolean;
   loading?: boolean;
   onClick?: () => void;
+  className?: string;
 };
 export default function MyButton({
   children,
   disabled,
   loading,
   onClick,
+  className,
 }: propsType) {
   return (
     <Button
-      className="rounded-lg border-none font-bold hover:opacity-80"
+      className={
+        "rounded-lg border-none font-bold hover:opacity-80 " + className
+      }
       disabled={disabled}
       loading={loading}
       onClick={onClick}
