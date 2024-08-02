@@ -11,6 +11,7 @@ import { useState } from "react";
 import QuickSwapDialog from "./QuickSwapDialog";
 import ClaimFeesTable from "@/components/ClaimFeesTable";
 import { Tooltip } from "antd";
+import Lending from "./Lending";
 function SupplyBorrow() {
   const { Store } = useStore();
   const { t } = useTranslation("translations");
@@ -184,6 +185,7 @@ function SupplyBorrow() {
           </div>
         </div>
       </div>
+      <Lending />
       <MyModal
         width={500}
         open={quickSwapShow}

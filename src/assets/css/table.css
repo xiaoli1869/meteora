@@ -1,6 +1,13 @@
-.ant-table-wrapper .ant-table-thead >tr>th,.ant-table-wrapper .ant-table{
+.myOpenTableBg{
+    background: #202126;
+}
+.ant-table-wrapper .ant-table{
     background: none;
     color: #fff;
+}
+.ant-table-wrapper .ant-table-thead >tr>th{
+    background: none;
+    color: rgba(255, 255, 255, 0.48);
 }
 .ant-checkbox .ant-checkbox-inner{
     background: none;

@@ -1,13 +1,14 @@
 import { Table } from "antd";
-import "./index.css";
+import "@/assets/css/table.css";
 import { useTranslation } from "react-i18next";
 import MyButton from "../MyButton";
+import { observer } from "mobx-react-lite";
 type propsType = {
   columns: any;
   data: any;
   setSelectRows: (keys: any) => void;
 };
-export default function ({ columns, data, setSelectRows }: propsType) {
+export default observer(function ({ columns, data, setSelectRows }: propsType) {
   const { t } = useTranslation("translations");
   const rowSelection = {
     onChange: (selectedRowKeys: any) => {
@@ -32,4 +33,4 @@ export default function ({ columns, data, setSelectRows }: propsType) {
       </div>
     </>
   );
-}
+});

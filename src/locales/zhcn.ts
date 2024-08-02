@@ -42,4 +42,7 @@ export default {
     tips: "质押 LP 之后，依旧可以获得 LP 原有的流动性收益",
     button: "Claim Fees",
   },
+  lendingTable: {
+    title: "质押借贷",
+  },
 };
