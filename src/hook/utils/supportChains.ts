@@ -8,6 +8,14 @@ export default [
     explorer: "https://blastscan.io",
   },
   {
+    id: 11155111,
+    name: "ETH Sepolia",
+    symbol: "ETH",
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/ETH.png",
+    supported: true,
+    explorer: "https://blastscan.io",
+  },
+  {
     id: 42161,
     name: "Arbitrum",
     symbol: "ETH",

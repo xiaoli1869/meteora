@@ -11,7 +11,7 @@ export default function ({
   children: any;
   open: boolean;
   onCancel: () => void;
-  title: string;
+  title?: string;
   width?: string | number;
 }) {
   return (
@@ -30,10 +30,12 @@ export default function ({
           border: "1px solid #151619",
         }}
       >
-        <div className="mb-4 flex justify-between items-center">
-          <span className="text-16 font-bold">{title}</span>
-          <CloseOutlined className="w-4 h-4" onClick={onCancel} />
-        </div>
+        {title ? (
+          <div className="mb-4 flex justify-between items-center">
+            <span className="text-16 font-bold">{title}</span>
+            <CloseOutlined className="w-4 h-4" onClick={onCancel} />
+          </div>
+        ) : null}
         {children}
       </div>
     </Modal>

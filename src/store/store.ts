@@ -9,6 +9,7 @@ class Store {
     address: "",
     balance: 0.0,
   };
+  contract = null;
   openNetworkSelect = () => {};
   walletKey = "WALLET-CONNECTOR";
   constructor() {
@@ -32,12 +33,16 @@ class Store {
         }
       )
     );
+    // return true;
   }
   getIsContacted() {
     return this.walletInfo.address !== "";
   }
   setOpenNetworkSelect(fc: () => void) {
     this.openNetworkSelect = fc;
+  }
+  setContract(contract: any) {
+    this.contract = contract;
   }
 }
 

@@ -1,36 +1,53 @@
-.myOpenTableBg{
+.myOpenTableBg {
     background: #202126;
 }
-.ant-table-wrapper .ant-table{
+
+.custom-row-class td{
+    vertical-align: middle;
+}
+
+.ant-table-wrapper .ant-table {
     background: none;
     color: #fff;
 }
-.ant-table-wrapper .ant-table-thead >tr>th{
+
+.ant-table-wrapper .ant-table-thead>tr>th {
     background: none;
     color: rgba(255, 255, 255, 0.48);
 }
-.ant-checkbox .ant-checkbox-inner{
+
+.ant-checkbox .ant-checkbox-inner {
     background: none;
 }
-.ant-table-wrapper .ant-table-thead >tr>th:not(:last-child):not(.ant-table-selection-column):not(.ant-table-row-expand-icon-cell):not([colspan])::before{
+
+.ant-table-wrapper .ant-table-thead>tr>th:not(:last-child):not(.ant-table-selection-column):not(.ant-table-row-expand-icon-cell):not([colspan])::before {
     background: none;
 }
-.ant-table-wrapper .ant-table-thead >tr>th,.ant-table-wrapper .ant-table-tbody >tr >td{
+
+.ant-table-wrapper .ant-table-thead>tr>th,
+.ant-table-wrapper .ant-table-tbody>tr>td {
     border-color: rgba(255, 255, 255, 0.12);
 }
-.ant-table-wrapper .ant-table-tbody .ant-table-row.ant-table-row-selected >.ant-table-cell,.ant-table-wrapper .ant-table-tbody .ant-table-row >.ant-table-cell-row-hover{
+
+.ant-table-wrapper .ant-table-tbody .ant-table-row.ant-table-row-selected>.ant-table-cell,
+.ant-table-wrapper .ant-table-tbody .ant-table-row>.ant-table-cell-row-hover {
     background: none;
 }
-.ant-checkbox-checked .ant-checkbox-inner{
+
+.ant-checkbox-checked .ant-checkbox-inner {
     border: none;
     background: #fff;
 }
-.ant-checkbox .ant-checkbox-inner:after{
+
+.ant-checkbox .ant-checkbox-inner:after {
     border-color: #000;
 }
-.ant-checkbox-wrapper:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-checked:not(.ant-checkbox-disabled) .ant-checkbox-inner,.ant-checkbox-checked:not(.ant-checkbox-disabled):hover .ant-checkbox-inner{
+
+.ant-checkbox-wrapper:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-checked:not(.ant-checkbox-disabled) .ant-checkbox-inner,
+.ant-checkbox-checked:not(.ant-checkbox-disabled):hover .ant-checkbox-inner {
     background: #fff;
 }
-.ant-checkbox-wrapper:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-inner{
+
+.ant-checkbox-wrapper:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-inner {
     border-color: #fff;
 }

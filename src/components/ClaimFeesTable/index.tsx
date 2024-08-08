@@ -7,13 +7,20 @@ type propsType = {
   columns: any;
   data: any;
   setSelectRows: (keys: any) => void;
+  selectRows: string[];
 };
-export default observer(function ({ columns, data, setSelectRows }: propsType) {
+export default observer(function ({
+  columns,
+  data,
+  setSelectRows,
+  selectRows,
+}: propsType) {
   const { t } = useTranslation("translations");
   const rowSelection = {
     onChange: (selectedRowKeys: any) => {
       setSelectRows(selectedRowKeys);
     },
+    selectedRowKeys: selectRows,
   };
   return (
     <>
@@ -27,7 +34,10 @@ export default observer(function ({ columns, data, setSelectRows }: propsType) {
         <div className="text-white opacity-50 text-center">
           {t("claimFees.tips")}
         </div>
-        <MyButton disabled className="w-full mt-2 text-18 h-14 box-border">
+        <MyButton
+          disabled={selectRows.length === 0}
+          className="w-full mt-2 text-18 h-14 box-border"
+        >
           {t("claimFees.button")}
         </MyButton>
       </div>

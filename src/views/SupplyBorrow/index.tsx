@@ -7,27 +7,28 @@ import { useTranslation } from "react-i18next";
 import { thousandSeparator } from "@/hook/utils/addressFormat";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import MyModal from "@/components/MyModal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import QuickSwapDialog from "./QuickSwapDialog";
 import ClaimFeesTable from "@/components/ClaimFeesTable";
-import { Tooltip } from "antd";
+import { Button, Tooltip } from "antd";
 import Lending from "./Lending";
+import { PeripheryContract } from "@/hook/web3/apeContract";
 function SupplyBorrow() {
   const { Store } = useStore();
   const { t } = useTranslation("translations");
   const [quickSwapShow, setQuickSwapShow] = useState(false);
   const [claimFeesShow, setClaimFeesShow] = useState(false);
   const [selectRows, setSelectRows] = useState([]);
-  const statisticalData = {
+  const [statisticalData, setStatisticalData] = useState({
     totalMortgageAmount: 7271762876.38,
     totalBorrowAmount: 36982.12,
     totalDepositAmount: 36982.12,
-    myMortgageAmount: 0,
+    myMortgageAmount: 1,
     myBorrowAmount: 36982.12,
     myUnclaimedEarnings: 0,
     myDepositAmount: 0,
     cumulativeGain: 0,
-  };
+  });
   const ClaimFeesColumns = [
     {
       title: t("claimFees.tab1"),
@@ -61,6 +62,46 @@ function SupplyBorrow() {
     },
   ];
   const ClaimFeesData = [{}, {}];
+  useEffect(() => {
+    init();
+  }, [Store.getIsSupportedChain(), Store.getIsContacted()]);
+  const init = async () => {
+    let newObj = { ...statisticalData };
+    if (Store.getIsSupportedChain()) {
+      const contract = PeripheryContract();
+      const LPTokens = await contract.getSupportLPTokens();
+      newObj.myBorrowAmount = await LPTokens.reduce(
+        async (acc: number, token: string) => {
+          const userTotalLPToken =
+            await contract.previewUserTotalLoanPerLPToken(
+              token,
+              Store.walletInfo.address
+            );
+          return (acc += parseInt(userTotalLPToken._hex, 16));
+        },
+        0
+      );
+      newObj.myMortgageAmount = await LPTokens.reduce(
+        async (acc: number, token: string) => {
+          const userTotalLPToken =
+            await contract.previewUserTotalLPValuePerLPToken(
+              token,
+              Store.walletInfo.address
+            );
+          return (acc += parseInt(userTotalLPToken._hex, 16));
+        },
+        0
+      );
+      setStatisticalData(newObj);
+      // newObj.totalBorrowAmount = parseInt(previewProtTotalLoan._hex, 16)
+      // console.log(previewProtTotalLoan);
+    }
+  };
+  const openQuickSwap = () => {
+    if (Store.getIsSupportedChain()) {
+      setQuickSwapShow(true);
+    }
+  };
   return (
     <CenterContent>
       <Header />
@@ -84,7 +125,7 @@ function SupplyBorrow() {
               className="pl-6"
               style={{ borderLeft: "1px solid rgba(255, 255, 255, 0.2)" }}
             >
-              <div className="opacity-50">{t("supplyBorrowData.tab1")}</div>
+              <div className="opacity-50">{t("supplyBorrowData.tab1_2")}</div>
               <div className="mt-2 font-bold text-18">
                 ${thousandSeparator(statisticalData.totalBorrowAmount)}
               </div>
@@ -100,7 +141,7 @@ function SupplyBorrow() {
             </div>
           </div>
           <div
-            onClick={() => setQuickSwapShow(true)}
+            onClick={openQuickSwap}
             className="w-full mt-6 cursor-pointer transition-all pt-3 pb-3 text-center bg-white rounded-lg text-black font-bold hover:opacity-80"
           >
             {t("supplyBorrowData.button1")}
@@ -203,6 +244,7 @@ function SupplyBorrow() {
         <ClaimFeesTable
           setSelectRows={(keys: any) => setSelectRows(keys)}
           columns={ClaimFeesColumns}
+          selectRows={selectRows}
           data={ClaimFeesData}
         />
       </MyModal>

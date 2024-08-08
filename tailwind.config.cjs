@@ -442,6 +442,9 @@ export default {
       boxShadow: {
         sm: "0px 5px 12px 2px rgba(0,0,0,0.0700)",
       },
+      borderWidth: {
+        "lxl-1": "1px",
+      },
     },
   },
   variants: {

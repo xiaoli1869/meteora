@@ -1,6 +1,7 @@
 export const CHAIN_NAME_ID_MAP = {
   MAINNET: 1,
   Ethereum: 1,
+  EthereumSepolia: 11155111,
   Goerli: 5,
   BSC: 56,
   Avalanche: 43114,
@@ -100,6 +101,13 @@ export const chainMap: any = {
     icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/BLAST.png",
     symbolIcon:
       "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/ETH.png",
+  },
+  "11155111": {
+    name: "ETH Sepolia",
+    symbol: "ETH",
+    symbolIcon:
+      "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/BLAST.png",
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/ETH.png",
   },
   "81457": {
     name: "Blast",

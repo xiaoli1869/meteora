@@ -1,11 +1,11 @@
 import { Table } from "antd";
 import "@/assets/css/table.css";
 import { observer } from "mobx-react-lite";
-import { DownOutlined, UpOutlined } from "@ant-design/icons";
 type propsType = {
   columns: any;
   data: any;
   title: string;
+  expandedRowKeys?: string[];
 };
 export default observer(function (props: propsType) {
   return (
@@ -18,30 +18,12 @@ export default observer(function (props: propsType) {
         columns={props.columns}
         dataSource={props.data}
         pagination={false}
+        rowKey="tokenId"
+        rowClassName={() => "custom-row-class"}
         expandable={{
-          expandRowByClick: true,
           expandedRowClassName: () => "myOpenTableBg",
-          expandIcon: ({ expanded, onExpand, record }) => {
-            if (record.children) {
-              if (expanded) {
-                return (
-                  <UpOutlined
-                    className="mr-1"
-                    onClick={(e) => onExpand(record, e)}
-                  />
-                );
-              } else {
-                return (
-                  <DownOutlined
-                    className="mr-1"
-                    onClick={(e) => onExpand(record, e)}
-                  />
-                );
-              }
-            } else {
-              return "";
-            }
-          },
+          expandedRowKeys: props.expandedRowKeys,
+          expandIcon: () => null,
         }}
       />
     </div>

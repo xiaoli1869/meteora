@@ -352,3 +352,6 @@ export async function changeNetwork(id: string) {
     return false;
   }
 }
+export function getProvider(): any {
+  return provider;
+}
