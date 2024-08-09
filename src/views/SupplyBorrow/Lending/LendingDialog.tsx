@@ -1,11 +1,14 @@
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import MyButton from "../../../components/MyButton";
+import { useState } from "react";
 type propsType = {
   type: number;
+  actionRow: any;
 };
 export default observer(function (props: propsType) {
   const { t } = useTranslation("translations");
+  const [inpValue, setInpValue] = useState("0");
   const proportionList = [
     {
       title: "25%",
@@ -24,14 +27,25 @@ export default observer(function (props: propsType) {
       value: 1,
     },
   ];
+  const updateInputValue = (value: number) => {
+    setInpValue((props.actionRow.maxLending * value).toFixed(2));
+  };
   return (
     <>
       <div className="flex items-center text-white">
-        <img className="w-9 h-9 rounded-full" src="" alt="" />
-        <img className="w-9 h-9 -ml-4 rounded-full" src="" alt="" />
+        <img
+          className="w-9 h-9 rounded-full"
+          src={props.actionRow.icon1}
+          alt=""
+        />
+        <img
+          className="w-9 h-9 -ml-4 rounded-full"
+          src={props.actionRow.icon2}
+          alt=""
+        />
         <div className="ml-2">
-          <div className="text-20 font-bold">SHUSHI / BTC</div>
-          <div className="opacity-80">ID:{2913460}</div>
+          <div className="text-20 font-bold">{props.actionRow.title}</div>
+          <div className="opacity-80">ID:{props.actionRow.tokenId}</div>
         </div>
       </div>
       <div
@@ -61,7 +75,8 @@ export default observer(function (props: propsType) {
           <input
             className="text-24 w-52  text-white font-bold"
             type="text"
-            value={0}
+            value={inpValue}
+            onChange={(e) => setInpValue(e.target.value)}
           />
           <div className="text-white flex items-center gap-x-1">
             {proportionList.map((item) => {
@@ -69,6 +84,7 @@ export default observer(function (props: propsType) {
                 <div
                   className="border-solid cursor-pointer border-lxl-1 border-black hover:border-white rounded-md whitespace-nowrap"
                   style={{ padding: "8px 12px" }}
+                  onClick={() => updateInputValue(item.value)}
                 >
                   {item.title}
                 </div>

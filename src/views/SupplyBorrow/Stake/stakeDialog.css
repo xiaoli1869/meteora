@@ -1,0 +1,21 @@
+.ant-segmented{
+    background: #151619;
+    color:#fff;
+    transition: all 0s !important;
+}
+.ant-segmented .ant-segmented-item-selected{
+    background: #202126;
+    color: #fff;
+}
+.ant-segmented.ant-segmented-lg{
+    border:1px solid rgba(255, 255, 255, 0.12);
+}
+.ant-segmented .ant-segmented-item:hover:not(.ant-segmented-item-selected):not(.ant-segmented-item-disabled){
+    color:#fff
+}
+.ant-segmented .ant-segmented-thumb~.ant-segmented-item:not(.ant-segmented-item-selected):not(.ant-segmented-item-disabled)::after{
+    background-color: #202126 !important;
+}
+.ant-segmented-thumb,.ant-segmented-thumb-motion-appear,.ant-segmented-thumb-motion-appear-active,.ant-segmented-thumb-motion{
+    background:none !important;
+}

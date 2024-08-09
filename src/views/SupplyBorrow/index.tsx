@@ -12,7 +12,8 @@ import QuickSwapDialog from "./QuickSwapDialog";
 import ClaimFeesTable from "@/components/ClaimFeesTable";
 import { Button, Tooltip } from "antd";
 import Lending from "./Lending";
-import { PeripheryContract } from "@/hook/web3/apeContract";
+import { PeripheryContract, StakeContract } from "@/hook/web3/apeContract";
+import Stake from "./Stake";
 function SupplyBorrow() {
   const { Store } = useStore();
   const { t } = useTranslation("translations");
@@ -92,8 +93,11 @@ function SupplyBorrow() {
         },
         0
       );
+      const myDepositAmount = await StakeContract().userTotalDeposits(
+        Store.walletInfo.address
+      );
+      newObj.myDepositAmount = parseInt(myDepositAmount._hex, 16);
       setStatisticalData(newObj);
-      // newObj.totalBorrowAmount = parseInt(previewProtTotalLoan._hex, 16)
       // console.log(previewProtTotalLoan);
     }
   };
@@ -227,6 +231,7 @@ function SupplyBorrow() {
         </div>
       </div>
       <Lending />
+      <Stake />
       <MyModal
         width={500}
         open={quickSwapShow}

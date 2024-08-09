@@ -20,6 +20,8 @@ export default observer(function () {
   const [selectRows, setSelectRows] = useState([]);
   const [lendingDialogShow, setLendingDialogShow] = useState(false);
   const [lendingDialogType, setLendingDialogType] = useState(1);
+  const [actionRow, setActionRow] = useState(null);
+  const [lendingData, setLendingData] = useState([...LendingList]);
   const { Store } = useStore();
 
   const HealthDegree = ({ lev }: { lev: any }) => {
@@ -179,7 +181,7 @@ export default observer(function () {
           <>
             <MyButton
               disabled={!Store.getIsSupportedChain()}
-              onClick={openLendingDialog}
+              onClick={() => openLendingDialog(record)}
             >
               {t("lendingTable.tab4_button")}
             </MyButton>
@@ -247,12 +249,23 @@ export default observer(function () {
       },
     },
   ];
-  const lendingData = [...LendingList];
   useEffect(() => {
     init();
   }, [Store.getIsSupportedChain()]);
   async function init() {
     if (Store.getIsSupportedChain()) {
+      // const a = await LPLendContract().previewPositionId(
+      //   Store.walletInfo.address,
+      //   "0x5d671210bB837CB006867e0499c8f8D0d3b72983",
+      //   18726
+      // );
+      // const b = await LPLendContract().lendings(a);
+      // console.log(b);
+      // const newLendingData = [...lendingData];
+      // newLendingData.forEach(async (item: any) => {
+      //   const a = await LPLendContract().lendings(item.address);
+      //   console.log(a);
+      // });
       // let newHealthDegrees = { ...healthDegrees };
       // for (const row of ClaimFeesData) {
       //   const result = await LPLendContract().previewHealthFactor(
@@ -266,7 +279,8 @@ export default observer(function () {
       // setHealthDegrees(newHealthDegrees);
     }
   }
-  const openLendingDialog = () => {
+  const openLendingDialog = (row: any) => {
+    setActionRow(row);
     setLendingDialogShow(true);
   };
   return (
@@ -300,7 +314,7 @@ export default observer(function () {
             : t("lendingTable.lendingDialog.title")
         }
       >
-        <LendingDialog type={lendingDialogType} />
+        <LendingDialog actionRow={actionRow} type={lendingDialogType} />
       </MyModal>
     </>
   );

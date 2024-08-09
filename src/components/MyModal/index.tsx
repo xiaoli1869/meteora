@@ -21,6 +21,7 @@ export default function ({
       footer={null}
       closable={false}
       width={width}
+      destroyOnClose
     >
       <div
         className="w-full box-border rounded-xl text-white"
