@@ -7,7 +7,7 @@ import {
   USDS_TOKEN,
   USDT_TOKEN,
 } from "../web3/libs/constants";
-
+import USDSimg from "@/assets/img/USDS.png";
 export const LendingList = [
   {
     title: "TokenA/TokenB",
@@ -34,7 +34,7 @@ export const TokenList = [
   {
     title: "USDS",
     tokenId: 1,
-    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/ETH.png",
+    icon: USDSimg,
     address: USDS_TOKEN.address,
     decimal: USDS_TOKEN.decimals,
   },

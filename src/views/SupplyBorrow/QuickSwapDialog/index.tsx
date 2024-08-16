@@ -27,6 +27,7 @@ import {
   parseUnitsDecimal,
   thousandSeparator,
 } from "../../../hook/utils/addressFormat";
+import USDSimg from "@/assets/img/USDS.png";
 import { SwapContract } from "../../../hook/web3/apeContract";
 function QuickSwapDialog({ close }: { close: () => void }) {
   const { t } = useTranslation("translations");
@@ -38,7 +39,7 @@ function QuickSwapDialog({ close }: { close: () => void }) {
   const [custom, setCustom] = useState("0.5");
   const [outObj, setOutObj] = useState({
     token: "USDS",
-    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/ETH.png",
+    icon: USDSimg,
     balance: 0,
     inpVal: 0,
     address: USDS_TOKEN.address,
@@ -488,7 +489,8 @@ function QuickSwapDialog({ close }: { close: () => void }) {
           Number(outObj.inpVal) > outObj.balance ||
           Number(outObj.inpVal) <= 0 ||
           Number(inObj.inpVal) > inObj.balance ||
-          Number(inObj.inpVal) <= 0
+          Number(inObj.inpVal) <= 0 ||
+          outObj.token === inObj.token
         }
       >
         {t("supplyBorrowData.quickSwap.swap")}

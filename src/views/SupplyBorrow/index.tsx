@@ -224,9 +224,10 @@ function SupplyBorrow() {
               </div>
               <div className="mt-1 font-bold text-18 flex items-center">
                 <span>
-                  {Store.getIsContacted()
+                  {/* {Store.getIsContacted()
                     ? "$" + thousandSeparator(statisticalData.myBorrowAmount)
-                    : "--"}
+                    : "--"} */}
+                  --
                 </span>
                 <div
                   onClick={() => setClaimFeesShow(true)}

@@ -324,7 +324,8 @@ export default observer(function (props: propsType) {
         onClick={() => buttonClick()}
         disabled={
           type === 1
-            ? Number(inpValue) <= 0
+            ? Number(inpValue) <= 0 ||
+              Number(inpValue) > props.actionRow.balance
             : props.actionRow.myPosition + props.actionRow.currentEarnings ===
                 0 ||
               Number(inpValue) >
