@@ -13,6 +13,17 @@ let selectedWallet: any = null;
 let provider: any = null;
 
 const ChainCfg: any = {
+  11155111: {
+    chainId: "0x11155111",
+    chainName: "Ethereum Sepolia",
+    nativeCurrency: {
+      name: "ETH",
+      symbol: "ETH",
+      decimals: 18,
+    },
+    rpcUrls: ["https://sepolia.infura.io/v3/"],
+    blockExplorerUrls: ["https://sepolia.etherscan.io"],
+  },
   1: {
     chainId: "0x1",
     chainName: "Ethereum Mainnet",

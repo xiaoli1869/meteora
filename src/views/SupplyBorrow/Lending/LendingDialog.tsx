@@ -1,14 +1,41 @@
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import MyButton from "../../../components/MyButton";
-import { useState } from "react";
+import MyButton from "@/components/MyButton";
+import { useEffect, useState } from "react";
+import { thousandSeparator } from "@/hook/utils/addressFormat";
+import { LPLendContract } from "@/hook/web3/apeContract";
+import {
+  getPositionIds,
+  mintPosition,
+} from "../../../hook/web3/libs/positions";
+import { TransactionState } from "../../../hook/web3/libs/providers";
+import { ethers } from "ethers";
+import {
+  ERC20_ABI,
+  LPLContractAddress,
+  NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+  USDS_TOKEN,
+} from "../../../hook/web3/libs/constants";
+import { getProvider } from "../../../hook/web3/web3Service";
+import { useStore } from "../../../store";
+import ERC721ABI from "@/hook/web3/abi/ERC721.json";
+import { message } from "antd";
+import {
+  formatUnitsDecimal,
+  parseUnitsDecimal,
+} from "../../../hook/utils/addressFormat";
+
 type propsType = {
   type: number;
   actionRow: any;
+  close: () => void;
 };
-export default observer(function (props: propsType) {
+export default observer(function ({ actionRow, type, close }: propsType) {
   const { t } = useTranslation("translations");
   const [inpValue, setInpValue] = useState("0");
+  const [buttonLoading, setButtonLoading] = useState(false);
+  const [usdsBalance, setUsdsBalance] = useState(0);
+  const { Store } = useStore();
   const proportionList = [
     {
       title: "25%",
@@ -28,24 +55,117 @@ export default observer(function (props: propsType) {
     },
   ];
   const updateInputValue = (value: number) => {
-    setInpValue((props.actionRow.maxLending * value).toFixed(2));
+    if (type === 1) {
+      setInpValue((actionRow.LPObj.maxLending * value).toFixed(2));
+    } else if (type === 2) {
+      setInpValue(
+        (
+          (actionRow.LPObj.maxLending - actionRow.LPObj.nowLending) *
+          value
+        ).toFixed(2)
+      );
+    } else if (type === 3) {
+      setInpValue((actionRow.LPObj.nowLending * value).toFixed(2));
+    }
   };
+  const buttonClick = async () => {
+    setButtonLoading(true);
+    if (type === 1) {
+      const mint = await mintPosition();
+      if (mint === TransactionState.Sent) {
+        let positionId = await getPositionIds();
+        positionId = ethers.BigNumber.from(positionId).toNumber();
+        const approveContract = new ethers.Contract(
+          NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+          ERC721ABI,
+          getProvider().getSigner()
+        );
+        try {
+          const approveTx = await approveContract.approve(
+            LPLContractAddress,
+            positionId
+          );
+          await approveTx.wait();
+          const supply = await LPLendContract().supply(
+            NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+            positionId,
+            parseUnitsDecimal(inpValue, 18)
+          );
+          await supply.wait();
+          if (supply.hash) {
+            message.success(t("message.success"));
+            close();
+          }
+        } catch (error) {
+          console.log(error);
+        } finally {
+          setButtonLoading(false);
+        }
+      } else {
+        setButtonLoading(false);
+      }
+    } else if (type === 2) {
+      try {
+        const lend = await LPLendContract().lend(
+          NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+          actionRow.LPObj.tokenId,
+          parseUnitsDecimal(inpValue, 18)
+        );
+        await lend.wait();
+        if (lend.hash) {
+          message.success(t("message.success"));
+          close();
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setButtonLoading(false);
+      }
+    } else if (type === 3) {
+      try {
+        const repay = await LPLendContract().repay(
+          NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+          actionRow.LPObj.tokenId,
+          parseUnitsDecimal(inpValue, 18)
+        );
+        await repay.wait();
+        if (repay.hash) {
+          message.success(t("message.success"));
+          close();
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setButtonLoading(false);
+      }
+    }
+  };
+  useEffect(() => {
+    init();
+  }, []);
+  async function init() {
+    if (type === 3) {
+      const balanceContract = new ethers.Contract(
+        USDS_TOKEN.address,
+        ERC20_ABI,
+        getProvider().getSigner()
+      );
+      const balance = await balanceContract.balanceOf(Store.walletInfo.address);
+      setUsdsBalance(formatUnitsDecimal(balance, 18));
+    }
+  }
   return (
     <>
       <div className="flex items-center text-white">
-        <img
-          className="w-9 h-9 rounded-full"
-          src={props.actionRow.icon1}
-          alt=""
-        />
+        <img className="w-9 h-9 rounded-full" src={actionRow.icon1} alt="" />
         <img
           className="w-9 h-9 -ml-4 rounded-full"
-          src={props.actionRow.icon2}
+          src={actionRow.icon2}
           alt=""
         />
         <div className="ml-2">
-          <div className="text-20 font-bold">{props.actionRow.title}</div>
-          <div className="opacity-80">ID:{props.actionRow.tokenId}</div>
+          <div className="text-20 font-bold">{actionRow.title}</div>
+          <div className="opacity-80">ID:{actionRow.LPObj.tokenId}</div>
         </div>
       </div>
       <div
@@ -54,18 +174,19 @@ export default observer(function (props: propsType) {
       >
         <div className="w-full opacity-80 flex items-center justify-between">
           <span>
-            {props.type === 3
+            {type === 3
               ? t("lendingTable.repaymentDialog.amount")
               : t("lendingTable.lendingDialog.amount")}
           </span>
-          {props.type === 1 ? null : (
+          {type === 1 ? null : (
             <span>
-              {props.type === 3
+              {type === 3
                 ? t("lendingTable.repaymentDialog.availableAmount", {
-                    num: 300.182,
+                    num: thousandSeparator(usdsBalance),
                   })
                 : t("lendingTable.lendingDialog.remainingLending", {
-                    num: 300.182,
+                    num:
+                      actionRow.LPObj.maxLending - actionRow.LPObj.nowLending,
                   })}
             </span>
           )}
@@ -76,13 +197,28 @@ export default observer(function (props: propsType) {
             className="text-24 w-52  text-white font-bold"
             type="text"
             value={inpValue}
-            onChange={(e) => setInpValue(e.target.value)}
+            onChange={(e) => {
+              let val;
+              if (type === 3) {
+                val =
+                  Number(e.target.value) > actionRow.LPObj.nowLending
+                    ? actionRow.LPObj.nowLending
+                    : e.target.value;
+              } else {
+                val =
+                  Number(e.target.value) > actionRow.LPObj.maxLending
+                    ? actionRow.LPObj.maxLending
+                    : e.target.value;
+              }
+              setInpValue(val);
+            }}
           />
           <div className="text-white flex items-center gap-x-1">
-            {proportionList.map((item) => {
+            {proportionList.map((item, index) => {
               return (
                 <div
-                  className="border-solid cursor-pointer border-lxl-1 border-black hover:border-white rounded-md whitespace-nowrap"
+                  key={index}
+                  className="border-solid cursor-pointer border-lxl-1 border-white border-opacity-0 hover:border-opacity-100 rounded-md whitespace-nowrap"
                   style={{ padding: "8px 12px" }}
                   onClick={() => updateInputValue(item.value)}
                 >
@@ -95,45 +231,50 @@ export default observer(function (props: propsType) {
       </div>
       <div className="flex mt-3 items-center text-white justify-between">
         <span className="opacity-50">
-          {props.type === 3
+          {type === 3
             ? t("lendingTable.repaymentDialog.value")
             : t("lendingTable.lendingDialog.value")}
         </span>
-        <span>${500}</span>
+        <span>${thousandSeparator(actionRow.LPObj.myPositions)}</span>
       </div>
-      {props.type === 1 ? (
+      {type === 1 ? (
         <div className="flex mt-3 items-center text-white justify-between">
           <span className="opacity-50">
             {t("lendingTable.lendingDialog.lendingRate")}
           </span>
-          <span>{70}%</span>
+          <span>{actionRow.LPObj.lendingRate * 100}%</span>
         </div>
       ) : null}
-      {props.type !== 3 ? (
+      {type !== 3 ? (
         <div className="flex mt-3 mb-10 items-center text-white justify-between">
           <span className="opacity-50">
             {t("lendingTable.lendingDialog.maxLending")}
           </span>
-          <span>{500} USDS</span>
+          <span>{thousandSeparator(actionRow.LPObj.maxLending)} USDS</span>
         </div>
       ) : (
         <div className="flex mt-3 mb-10 items-center text-white justify-between">
           <span className="opacity-50">
             {t("lendingTable.repaymentDialog.currentLoans")}
           </span>
-          <span>{500} USDS</span>
+          <span>{actionRow.LPObj.nowLending} USDS</span>
         </div>
       )}
 
-      {props.type === 1 ? (
+      {type === 1 ? (
         <div className="mb-2 text-center text-white opacity-50">
           {t("lendingTable.lendingDialog.tips")}
         </div>
       ) : null}
-      <MyButton className=" w-full text-18 font-bold h-14">
-        {props.type === 1
+      <MyButton
+        className=" w-full text-18 font-bold h-14"
+        disabled={!(Number(inpValue) > 0)}
+        onClick={buttonClick}
+        loading={buttonLoading}
+      >
+        {type === 1
           ? t("lendingTable.lendingDialog.button")
-          : props.type === 2
+          : type === 2
           ? t("lendingTable.lendingDialog.button1")
           : t("lendingTable.repaymentDialog.button")}
       </MyButton>

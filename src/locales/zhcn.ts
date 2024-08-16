@@ -30,6 +30,8 @@ export default {
       mobileRate: "最佳流动池收费",
       exchangeRate: "兑换手续费",
       slippage: "Slippage",
+      auto: "Auto",
+      custom: "Custom",
       swap: "Swap",
       tips: "XXXXXXXXXXXXXXX",
     },
@@ -41,6 +43,11 @@ export default {
     tab3: "收益额",
     tips: "质押 LP 之后，依旧可以获得 LP 原有的流动性收益",
     button: "Claim Fees",
+  },
+  message: {
+    success: "success",
+    warning: "warning",
+    error: "error",
   },
   lendingTable: {
     title: "质押借贷",
@@ -67,6 +74,7 @@ export default {
       button: "质押并借出",
       remainingLending: "当前剩余可借：{{num}} USDS",
       button1: "继续借出",
+      warningMsg: "请输入正确的金额",
     },
     repaymentDialog: {
       title: "USDS 还款",

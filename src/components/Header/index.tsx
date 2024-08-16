@@ -102,7 +102,7 @@ const Header = () => {
   }, []);
   return (
     <>
-      <div className="w-full flex justify-between pt-4 pb-4">
+      <div className="w-full flex justify-between pt-4 pb-4 mb-6">
         <img className="h-5" src={logo} alt="" />
         <div className="flex items-center gap-x-6">
           {tabList.map((item, index) => {

@@ -182,7 +182,24 @@ body {
     overflow-wrap: break-word;
     word-break: break-word;
 }
+::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+}
 
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 28px;
+}
+
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: transparent;
+}
 /* @font-face {
     font-family: 'OPPOSans';
     src: url('./assets/font/OPPOSans-M.ttf') format('truetype'), url('./assets/font/OPPOSans-M.ttf') format('woff');

@@ -7,15 +7,19 @@ import { thousandSeparator } from "@/hook/utils/addressFormat";
 import MyButton from "@/components/MyButton";
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
-import { LPLendContract } from "@/hook/web3/apeContract";
 import MyModal from "../../../components/MyModal";
 import ClaimFeesTable from "../../../components/ClaimFeesTable";
 import LendingDialog from "./LendingDialog";
+import {
+  LPLendContract,
+  PeripheryContract,
+} from "../../../hook/web3/apeContract";
+import { ethers } from "ethers";
+import { formatUnitsDecimal } from "../../../hook/utils/addressFormat";
 
 export default observer(function () {
   const { t } = useTranslation("translations");
   const [expandedRowKeys, setExpandedRowKeys] = useState<any>([]);
-  const [healthDegrees, setHealthDegrees] = useState({});
   const [claimFeesShow, setClaimFeesShow] = useState(false);
   const [selectRows, setSelectRows] = useState([]);
   const [lendingDialogShow, setLendingDialogShow] = useState(false);
@@ -53,9 +57,16 @@ export default observer(function () {
     for (let i = 0; i < 5 - lev; i++) {
       content.push(itemDiv("#30333D"));
     }
-    return <div className="flex gap-x-0.5">{content}</div>;
+    return (
+      <div className="flex gap-x-0.5" key={Date.now()}>
+        {content}
+      </div>
+    );
   };
   const handleExpand = (record: any) => {
+    if (!Store.getIsSupportedChain()) {
+      return;
+    }
     const keys = expandedRowKeys.includes(record.tokenId)
       ? expandedRowKeys.filter((k) => k !== record.tokenId)
       : [...expandedRowKeys, record.tokenId];
@@ -102,14 +113,18 @@ export default observer(function () {
       render: (text: any, row: any) => {
         return (
           <div className=" flex items-center">
-            <img className="w-7 h-7 rounded-full" src={row.icon1} alt="" />
-            <img
-              className="w-7 h-7 rounded-full -ml-4"
-              src={row.icon2}
-              alt=""
-            />
+            {row.isLP ? null : (
+              <>
+                <img className="w-7 h-7 rounded-full" src={row.icon1} alt="" />
+                <img
+                  className="w-7 h-7 rounded-full -ml-4"
+                  src={row.icon2}
+                  alt=""
+                />
+              </>
+            )}
             <span className="ml-2">{text}</span>
-            {row.children ? (
+            {row?.children ? (
               <span
                 className="ml-2 cursor-pointer"
                 onClick={() => handleExpand(row)}
@@ -132,12 +147,12 @@ export default observer(function () {
       render: (text: any, record: any) => {
         return Store.getIsSupportedChain() ? (
           <div>
-            <div className="text-white">${thousandSeparator(text)}</div>
-            {record.children ? (
+            <div className="text-white">{getRender(record, "myPositions")}</div>
+            {record.isLP ? null : (
               <div className="text-white opacity-50">
-                {t("lendingTable.tab2_1", { num: record.children.length })}
+                {t("lendingTable.tab2_1", { num: record?.children?.length })}
               </div>
-            ) : null}
+            )}
           </div>
         ) : (
           "--"
@@ -151,8 +166,8 @@ export default observer(function () {
       render: (text: any, record: any) => {
         return Store.getIsSupportedChain() ? (
           <>
-            <div className="text-white">${thousandSeparator(text)}</div>
-            {record.children ? (
+            <div className="text-white">{getRender(record, "pledge")}</div>
+            {record.isLP && record.LPIncome > 0 ? (
               <div className=" flex items-center">
                 <span className="text-white opacity-50">
                   {t("lendingTable.tab3_1", { num: record.LPIncome })}
@@ -177,16 +192,14 @@ export default observer(function () {
       dataIndex: "",
       key: "",
       render: (text: any, record: any) => {
-        return (
-          <>
-            <MyButton
-              disabled={!Store.getIsSupportedChain()}
-              onClick={() => openLendingDialog(record)}
-            >
-              {t("lendingTable.tab4_button")}
-            </MyButton>
-          </>
-        );
+        return record.isLP ? (
+          <MyButton
+            disabled={!(Store.getIsSupportedChain() && record.nowLending === 0)}
+            onClick={() => openLendingDialog(record, 1)}
+          >
+            {t("lendingTable.tab4_button")}
+          </MyButton>
+        ) : null;
       },
     },
     {
@@ -194,13 +207,13 @@ export default observer(function () {
       dataIndex: "",
       key: "",
       render: (text: any, record: any) => {
-        return (
+        return Store.getIsSupportedChain() ? (
           <>
-            <div>${thousandSeparator(record.maxLending)}</div>
-            {Store.getIsSupportedChain() ? (
-              <div>{record.lendingRate}%</div>
-            ) : null}
+            <div>{getRender(record, "maxLending").max}</div>
+            <div>{getRender(record, "maxLending").lendingRate * 100}%</div>
           </>
+        ) : (
+          "--"
         );
       },
     },
@@ -211,10 +224,10 @@ export default observer(function () {
       render: (text: any, row: any) => {
         return Store.getIsSupportedChain() ? (
           <div className="flex items-center gap-x-1">
-            <span className="text-white">
-              ${thousandSeparator(row.nowLending)}
-            </span>
-            <HealthDegree lev={healthDegrees[row.tokenId] || 0} />
+            <span className="text-white">{getRender(row, "nowLending")}</span>
+            {row.isLP && row.healthLv !== 0 ? (
+              <HealthDegree lev={row.healthLv} />
+            ) : null}
           </div>
         ) : (
           "--"
@@ -227,11 +240,14 @@ export default observer(function () {
       align: "right",
       key: "",
       render: (text: any, record: any) => {
-        return (
+        return record.isLP ? (
           <div className="flex items-center justify-end">
-            <MyButton disabled={!Store.getIsSupportedChain()}>
+            <MyButton
+              disabled={!(Store.getIsSupportedChain() && record.nowLending > 0)}
+              onClick={() => openLendingDialog(record, 2)}
+            >
               {t("lendingTable.tab7_button1", {
-                token: record.title.split("/")[0],
+                token: "USDS",
               })}
             </MyButton>
             <div
@@ -239,48 +255,209 @@ export default observer(function () {
               style={{
                 padding: "6px 10px",
                 border: "1px solid rgba(255, 255, 255, 0.32)",
-                opacity: !Store.getIsSupportedChain() ? "0.5" : "1",
+                opacity: !(Store.getIsSupportedChain() && record.nowLending > 0)
+                  ? "0.5"
+                  : "1",
               }}
+              onClick={() => openLendingDialog(record, 3)}
             >
               {t("lendingTable.tab7_button2")}
             </div>
           </div>
-        );
+        ) : null;
       },
     },
   ];
+  const getRender = (row: any, key: string): any => {
+    switch (key) {
+      case "myPositions":
+        if (row.isLP) {
+          return "$" + thousandSeparator(row.myPositions);
+        } else {
+          if (row?.children) {
+            return (
+              "$" +
+              thousandSeparator(
+                row.children.reduce((sum: number, item: any) => {
+                  return (sum += item.myPositions);
+                }, 0)
+              )
+            );
+          } else {
+            return "--";
+          }
+        }
+      case "pledge":
+        if (row.isLP) {
+          return "$" + thousandSeparator(row.pledge);
+        } else {
+          if (row?.children) {
+            return (
+              "$" +
+              thousandSeparator(
+                row.children.reduce((sum: number, item: any) => {
+                  return (sum += item.pledge);
+                }, 0)
+              )
+            );
+          } else {
+            return "--";
+          }
+        }
+      case "LPIncome":
+        if (row.isLP) {
+          return true;
+        } else {
+          if (row?.children) {
+            return (
+              "$" +
+              thousandSeparator(
+                row.children.reduce((sum: number, item: any) => {
+                  return (sum += item.pledge);
+                }, 0)
+              )
+            );
+          } else {
+            return "--";
+          }
+        }
+      case "maxLending":
+        if (row.isLP) {
+          return {
+            max: "$" + thousandSeparator(row.maxLending),
+            lendingRate: row.lendingRate,
+          };
+        } else {
+          if (row?.children) {
+            return {
+              max:
+                "$" +
+                thousandSeparator(
+                  row.children.reduce((sum: number, item: any) => {
+                    return (sum += item.maxLending);
+                  }, 0)
+                ),
+              lendingRate:
+                Math.floor(
+                  (row.children.reduce((sum: number, item: any) => {
+                    return (sum += item.maxLending);
+                  }, 0) /
+                    row.children.reduce((sum: number, item: any) => {
+                      return (sum += item.myPositions);
+                    }, 0)) *
+                    100
+                ) / 100,
+            };
+          } else {
+            return "--";
+          }
+        }
+      case "nowLending":
+        if (row.isLP) {
+          return "$" + thousandSeparator(row.nowLending);
+        } else {
+          if (row?.children) {
+            return (
+              "$" +
+              thousandSeparator(
+                row.children.reduce((sum: number, item: any) => {
+                  return (sum += item.nowLending);
+                }, 0)
+              )
+            );
+          } else {
+            return "--";
+          }
+        }
+      default:
+        break;
+    }
+  };
   useEffect(() => {
     init();
   }, [Store.getIsSupportedChain()]);
   async function init() {
     if (Store.getIsSupportedChain()) {
-      // const a = await LPLendContract().previewPositionId(
-      //   Store.walletInfo.address,
-      //   "0x5d671210bB837CB006867e0499c8f8D0d3b72983",
-      //   18726
-      // );
-      // const b = await LPLendContract().lendings(a);
-      // console.log(b);
-      // const newLendingData = [...lendingData];
-      // newLendingData.forEach(async (item: any) => {
-      //   const a = await LPLendContract().lendings(item.address);
-      //   console.log(a);
-      // });
-      // let newHealthDegrees = { ...healthDegrees };
-      // for (const row of ClaimFeesData) {
-      //   const result = await LPLendContract().previewHealthFactor(
-      //     Store.walletInfo.address,
-      //     row.address,
-      //     row.tokenId
-      //   );
-      //   console.log(result);
-      //   // newHealthDegrees[row.tokenId] = result.healthFactor;
-      // }
-      // setHealthDegrees(newHealthDegrees);
+      const newLendingData = [...lendingData];
+      for (let i = 0; i < newLendingData.length; i++) {
+        for (let m = 0; m < newLendingData[i].nft.length; m++) {
+          const nftItem = newLendingData[i].nft[m];
+          const lpTokenIds = await PeripheryContract().previewProtTokenIds(
+            nftItem
+          );
+          if (lpTokenIds.length > 0) {
+            newLendingData[i]["children"] = [];
+            for (let n = 0; n < lpTokenIds.length; n++) {
+              const lpTokenId = parseInt(lpTokenIds[n]._hex, 16);
+              let myPositions = await LPLendContract().previewLPUSDValue(
+                nftItem,
+                lpTokenId
+              );
+              myPositions = formatUnitsDecimal(myPositions, 18);
+              const previewPositionId =
+                await LPLendContract().previewPositionId(
+                  Store.walletInfo.address,
+                  nftItem,
+                  lpTokenId
+                );
+              const userFee = await LPLendContract().userFee(previewPositionId);
+              let nowLending = await LPLendContract().previewUserLending(
+                Store.walletInfo.address,
+                nftItem,
+                lpTokenId
+              );
+              nowLending = formatUnitsDecimal(nowLending, 18);
+              let maxLending = await LPLendContract().previewMaxLoanUSDS(
+                Store.walletInfo.address,
+                nftItem,
+                lpTokenId,
+                Boolean(nowLending > 0)
+              );
+              maxLending = formatUnitsDecimal(maxLending, 18);
+              let healthLv = await LPLendContract().previewHealthFactor(
+                Store.walletInfo.address,
+                nftItem,
+                lpTokenId
+              );
+              // console.log(healthLv)
+              // healthLv = ethers.BigNumber.from(
+              //   healthLv[healthLv.length - 1]
+              // ).toNumber();
+              healthLv = 0;
+              const obj = {
+                title: lpTokenId,
+                tokenId: lpTokenId,
+                myPositions,
+                pledge: nowLending > 0 ? myPositions : 0,
+                LPIncome: userFee.reduce((sum: number, item: any) => {
+                  return (sum += parseInt(item._hex, 16));
+                }, 0),
+                maxLending: maxLending,
+                lendingRate: Math.floor((maxLending / myPositions) * 100) / 100,
+                nowLending: nowLending,
+                healthLv,
+                isLP: true,
+              };
+              newLendingData[i]["children"].push(obj);
+            }
+          }
+        }
+      }
+      setLendingData([...newLendingData]);
     }
   }
-  const openLendingDialog = (row: any) => {
-    setActionRow(row);
+  const openLendingDialog = (row: any, type: number) => {
+    setLendingDialogType(type);
+    let record = null;
+    lendingData.forEach((item: any) => {
+      item?.children?.forEach((ite: any) => {
+        if (ite.tokenId === row.tokenId) {
+          record = { ...item, LPObj: { ...ite } };
+        }
+      });
+    });
+    console.log(record);
+    setActionRow(record || row);
     setLendingDialogShow(true);
   };
   return (
@@ -314,7 +491,14 @@ export default observer(function () {
             : t("lendingTable.lendingDialog.title")
         }
       >
-        <LendingDialog actionRow={actionRow} type={lendingDialogType} />
+        <LendingDialog
+          close={() => {
+            setLendingDialogShow(false);
+            init();
+          }}
+          actionRow={actionRow}
+          type={lendingDialogType}
+        />
       </MyModal>
     </>
   );

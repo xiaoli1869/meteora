@@ -1,64 +1,55 @@
+import {
+  NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS,
+  TOKEN_A,
+  TOKEN_B,
+  TokenA_TokenB_Pool,
+  USDC_TOKEN,
+  USDS_TOKEN,
+  USDT_TOKEN,
+} from "../web3/libs/constants";
+
 export const LendingList = [
   {
-    title: "USDS/USDT",
-    tokenId: 18726,
+    title: "TokenA/TokenB",
+    tokenId: 1,
     icon1:
       "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USD.png",
     icon2:
       "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USDT.png",
-    myPositions: 172316.57,
-    pledge: 122850.2371,
-    address: "0x5d671210bB837CB006867e0499c8f8D0d3b72983",
-    LPIncome: 24.19,
-    maxLending: 2289.182,
-    lendingRate: 90,
-    nowLending: 172316.57,
-    children: [
-      {
-        title: "USDS/USDT",
-        tokenId: 18603,
-        icon1:
-          "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USD.png",
-        icon2:
-          "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USDT.png",
-        myPositions: 172316.57,
-        pledge: 122850.2371,
-        address: "0xF7C657d6adc79C7e0c958150cED69f81271EF799",
-        LPIncome: 24.19,
-        maxLending: 2289.182,
-        lendingRate: 90,
-        nowLending: 172316.57,
-      },
-      {
-        title: "USDS/USDT",
-        tokenId: 18603,
-        icon1:
-          "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USD.png",
-        icon2:
-          "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USDT.png",
-        myPositions: 172316.57,
-        pledge: 122850.2371,
-        address: "0xF7C657d6adc79C7e0c958150cED69f81271EF799",
-        LPIncome: 24.19,
-        maxLending: 2289.182,
-        lendingRate: 90,
-        nowLending: 172316.57,
-      },
-    ],
+    address: TokenA_TokenB_Pool,
+    token0: TOKEN_A.address,
+    token1: TOKEN_B.address,
+    myPositions: 0,
+    pledge: 0,
+    LPIncome: 0,
+    maxLending: 0,
+    lendingRate: 0,
+    nowLending: 0,
+    fee: 0.003,
+    nft: [NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS],
+    isLP: false,
+  },
+];
+export const TokenList = [
+  {
+    title: "USDS",
+    tokenId: 1,
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/ETH.png",
+    address: USDS_TOKEN.address,
+    decimal: USDS_TOKEN.decimals,
   },
   {
-    title: "TokenA/TokenB",
-    tokenId: 18725,
-    icon1:
-      "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USD.png",
-    icon2:
-      "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USDT.png",
-    myPositions: 172316.57,
-    pledge: 122850.2371,
-    address: "0x99aCda102AF2A364FedF35199ebC64781af30BA9",
-    LPIncome: 24.19,
-    maxLending: 2289.182,
-    lendingRate: 90,
-    nowLending: 172316.57,
+    title: "USDT",
+    tokenId: 2,
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USDT.png",
+    address: USDT_TOKEN.address,
+    decimal: USDT_TOKEN.decimals,
+  },
+  {
+    title: "USDC",
+    tokenId: 3,
+    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/USD.png",
+    address: USDC_TOKEN.address,
+    decimal: USDC_TOKEN.decimals,
   },
 ];

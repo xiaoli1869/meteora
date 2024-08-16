@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useStore } from "@/store";
 import LendingAndDepositTable from "@/components/LendingAndDepositTable";
 import { useTranslation } from "react-i18next";
-import { LendingList } from "@/hook/utils/pool";
+import { TokenList } from "@/hook/utils/pool";
 import { thousandSeparator } from "@/hook/utils/addressFormat";
 import MyButton from "@/components/MyButton";
 import { InfoCircleOutlined } from "@ant-design/icons";
@@ -10,16 +10,39 @@ import { useEffect, useState } from "react";
 import MyModal from "../../../components/MyModal";
 import StakeDialog from "./StakeDialog";
 import { Tooltip } from "antd";
+import {
+  StakeToSCContract,
+  StakeToSTContract,
+} from "../../../hook/web3/apeContract";
+import {
+  ERC20_ABI,
+  USDC_TOKEN,
+  USDS_TOKEN,
+  USDT_TOKEN,
+} from "../../../hook/web3/libs/constants";
+import { formatUnitsDecimal } from "../../../hook/utils/addressFormat";
+import { getProvider } from "../../../hook/web3/web3Service";
+import { ethers } from "ethers";
 
 export default observer(function () {
   const { t } = useTranslation("translations");
   const [stakeDialogShow, setStakeDialogShow] = useState(false);
   const [stakeDialogType, setStakeDialogType] = useState(1);
   const [actionRow, setActionRow] = useState(null);
-  const [lendingData, setLendingData] = useState([...LendingList]);
+  const [stakeData, setStakeData] = useState(
+    TokenList.map((item: any) => {
+      return {
+        ...item,
+        myPosition: 0,
+        interestRate: 0,
+        sum: 0,
+        currentEarnings: 0,
+      };
+    })
+  );
   const { Store } = useStore();
 
-  const lendingColumns = [
+  const stakeColumns = [
     {
       title: t("stakeTable.tab1"),
       dataIndex: "title",
@@ -27,7 +50,7 @@ export default observer(function () {
       render: (text: any, row: any) => {
         return (
           <div className=" flex items-center">
-            <img className="w-7 h-7 rounded-full" src={row.icon1} alt="" />
+            <img className="w-7 h-7 rounded-full" src={row.icon} alt="" />
             <span className="ml-2">{text}</span>
           </div>
         );
@@ -35,8 +58,8 @@ export default observer(function () {
     },
     {
       title: t("stakeTable.tab2"),
-      dataIndex: "myPositions",
-      key: "myPositions",
+      dataIndex: "myPosition",
+      key: "myPosition",
       render: (text: any, record: any) => {
         return Store.getIsSupportedChain() ? (
           <div>
@@ -49,8 +72,8 @@ export default observer(function () {
     },
     {
       title: t("stakeTable.tab3"),
-      dataIndex: "pledge",
-      key: "pledge",
+      dataIndex: "interestRate",
+      key: "interestRate",
       render: (text: any, record: any) => {
         return Store.getIsSupportedChain() ? (
           <div className="flex items-center">
@@ -66,12 +89,12 @@ export default observer(function () {
     },
     {
       title: t("stakeTable.tab4"),
-      dataIndex: "",
-      key: "",
-      render: (text: any, record: any) => {
+      dataIndex: "sum",
+      key: "sum",
+      render: (text: any) => {
         return Store.getIsSupportedChain() ? (
           <div>
-            <div className="text-white">{record.maxLending} USDS</div>
+            <div className="text-white">{text} USDS</div>
           </div>
         ) : (
           "--"
@@ -80,11 +103,11 @@ export default observer(function () {
     },
     {
       title: t("stakeTable.tab5"),
-      dataIndex: "",
-      key: "",
-      render: (text: any, record: any) => {
+      dataIndex: "currentEarnings",
+      key: "currentEarnings",
+      render: (text: any) => {
         return Store.getIsSupportedChain() ? (
-          <div>${thousandSeparator(record.maxLending)}</div>
+          <div>${thousandSeparator(text)}</div>
         ) : (
           "--"
         );
@@ -125,42 +148,132 @@ export default observer(function () {
   }, [Store.getIsSupportedChain()]);
   async function init() {
     if (Store.getIsSupportedChain()) {
-      // const a = await LPLendContract().previewPositionId(
-      //   Store.walletInfo.address,
-      //   "0x5d671210bB837CB006867e0499c8f8D0d3b72983",
-      //   18726
-      // );
-      // const b = await LPLendContract().lendings(a);
-      // console.log(b);
-      // const newLendingData = [...lendingData];
-      // newLendingData.forEach(async (item: any) => {
-      //   const a = await LPLendContract().lendings(item.address);
-      //   console.log(a);
-      // });
-      // let newHealthDegrees = { ...healthDegrees };
-      // for (const row of ClaimFeesData) {
-      //   const result = await LPLendContract().previewHealthFactor(
-      //     Store.walletInfo.address,
-      //     row.address,
-      //     row.tokenId
-      //   );
-      //   console.log(result);
-      //   // newHealthDegrees[row.tokenId] = result.healthFactor;
-      // }
-      // setHealthDegrees(newHealthDegrees);
+      let newStakeData = [...stakeData];
+      for (let i = 0; i < newStakeData.length; i++) {
+        switch (newStakeData[i].title) {
+          case "USDS":
+            newStakeData[i].sum =
+              formatUnitsDecimal(
+                await StakeToSCContract().protTotalDeposits(USDS_TOKEN.address),
+                USDS_TOKEN.decimals
+              ) +
+              formatUnitsDecimal(
+                await StakeToSTContract().protTotalDeposits(USDS_TOKEN.address),
+                USDS_TOKEN.decimals
+              );
+            newStakeData[i].myPosition =
+              formatUnitsDecimal(
+                await StakeToSCContract().userTotalDeposits(
+                  Store.walletInfo.address,
+                  USDS_TOKEN.address
+                ),
+                USDS_TOKEN.decimals
+              ) +
+              formatUnitsDecimal(
+                await StakeToSTContract().userTotalDeposits(
+                  Store.walletInfo.address,
+                  USDS_TOKEN.address
+                ),
+                USDS_TOKEN.decimals
+              );
+            newStakeData[i].interestRate = formatUnitsDecimal(
+              await StakeToSCContract().fee(),
+              4
+            );
+            break;
+          case "USDT":
+            newStakeData[i].sum = formatUnitsDecimal(
+              await StakeToSTContract().protTotalDeposits(USDT_TOKEN.address),
+              USDT_TOKEN.decimals
+            );
+            newStakeData[i].myPosition = formatUnitsDecimal(
+              await StakeToSTContract().userTotalDeposits(
+                Store.walletInfo.address,
+                USDT_TOKEN.address
+              ),
+              USDT_TOKEN.decimals
+            );
+            newStakeData[i].interestRate = formatUnitsDecimal(
+              await StakeToSTContract().fee(),
+              4
+            );
+            break;
+          case "USDC":
+            newStakeData[i].sum = formatUnitsDecimal(
+              await StakeToSCContract().protTotalDeposits(USDC_TOKEN.address),
+              USDC_TOKEN.decimals
+            );
+            newStakeData[i].myPosition = formatUnitsDecimal(
+              await StakeToSCContract().userTotalDeposits(
+                Store.walletInfo.address,
+                USDC_TOKEN.address
+              ),
+              USDC_TOKEN.decimals
+            );
+            newStakeData[i].interestRate = formatUnitsDecimal(
+              await StakeToSCContract().fee(),
+              4
+            );
+            break;
+
+          default:
+            break;
+        }
+      }
+      setStakeData([...newStakeData]);
     }
   }
-  const openStakeDialog = (row: any, type: number) => {
+  const openStakeDialog = async (row: any, type: number) => {
+    const balanceContract = new ethers.Contract(
+      row.address,
+      ERC20_ABI,
+      getProvider().getSigner()
+    );
+    let actionObj = {
+      ...row,
+      LPList: [],
+      balance: formatUnitsDecimal(
+        await balanceContract.balanceOf(Store.walletInfo.address),
+        row.decimal
+      ),
+    };
+    if (actionObj.title === "USDS") {
+      actionObj.LPList = [
+        {
+          title: "USDS/USDT",
+          otherToken: stakeData.find((item: any) => item.title === "USDT"),
+        },
+        {
+          title: "USDS/USDC",
+          otherToken: stakeData.find((item: any) => item.title === "USDC"),
+        },
+      ];
+    } else if (actionObj.title === "USDT") {
+      actionObj.LPList = [
+        {
+          title: "USDS/USDT",
+          otherToken: stakeData.find((item: any) => item.title === "USDS"),
+        },
+      ];
+    } else if (actionObj.title === "USDC") {
+      actionObj.LPList = [
+        {
+          title: "USDS/USDC",
+          otherToken: stakeData.find((item: any) => item.title === "USDS"),
+        },
+      ];
+    }
     setStakeDialogType(type);
-    setActionRow(row);
+    console.log(actionObj);
+    setActionRow(actionObj);
     setStakeDialogShow(true);
   };
   return (
     <>
       <LendingAndDepositTable
-        title={t("lendingTable.title")}
-        columns={lendingColumns}
-        data={lendingData}
+        title={t("stakeTable.title")}
+        columns={stakeColumns}
+        data={stakeData}
       />
       <MyModal
         width={500}
@@ -168,7 +281,10 @@ export default observer(function () {
         onCancel={() => setStakeDialogShow(false)}
       >
         <StakeDialog
-          onCancel={() => setStakeDialogShow(false)}
+          onCancel={() => {
+            setStakeDialogShow(false);
+            init();
+          }}
           actionRow={actionRow}
           type={stakeDialogType}
         />

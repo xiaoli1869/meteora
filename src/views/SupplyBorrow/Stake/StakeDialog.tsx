@@ -4,7 +4,22 @@ import MyButton from "../../../components/MyButton";
 import { useState } from "react";
 import { CloseOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import "./stakeDialog.css";
-import { Segmented, Tooltip } from "antd";
+import { message, Segmented, Tooltip } from "antd";
+import {
+  parseUnitsDecimal,
+  thousandSeparator,
+} from "../../../hook/utils/addressFormat";
+import {
+  StakeToSCContract,
+  StakeToSTContract,
+} from "../../../hook/web3/apeContract";
+import { ethers } from "ethers";
+import { getProvider } from "../../../hook/web3/web3Service";
+import {
+  ERC20_ABI,
+  StakeToSCContractAddress,
+  StakeToSTContractAddress,
+} from "../../../hook/web3/libs/constants";
 type propsType = {
   type: number;
   actionRow: any;
@@ -13,6 +28,10 @@ type propsType = {
 export default observer(function (props: propsType) {
   const { t } = useTranslation("translations");
   const [inpValue, setInpValue] = useState("0");
+  const [segmentedVal, setSegmentedVal] = useState(
+    props.actionRow.LPList[0].title
+  );
+  const [buttonLoading, setButtonLoading] = useState(false);
   const [type, setType] = useState(props.type);
   const proportionList = [
     {
@@ -33,18 +52,105 @@ export default observer(function (props: propsType) {
     },
   ];
   const updateInputValue = (value: number) => {
-    setInpValue((props.actionRow.maxLending * value).toFixed(2));
+    if (type === 1) {
+      setInpValue((props.actionRow.balance * value).toFixed(2));
+    } else if (type === 2) {
+      setInpValue(
+        (
+          (props.actionRow.myPosition + props.actionRow.currentEarnings) *
+          value
+        ).toFixed(2)
+      );
+    }
   };
-  const segmentedOption = [
-    {
-      label: "USDT / USDS",
-      value: "1",
-    },
-    {
-      label: "USDC / USDS",
-      value: "2",
-    },
-  ];
+  const buttonClick = async () => {
+    setButtonLoading(true);
+    const approveContract = new ethers.Contract(
+      props.actionRow.address,
+      ERC20_ABI,
+      getProvider().getSigner()
+    );
+    if (type === 1) {
+      if (segmentedVal === "USDS/USDT") {
+        try {
+          const approveTx = await approveContract.approve(
+            StakeToSTContractAddress,
+            parseUnitsDecimal(inpValue, props.actionRow.decimal)
+          );
+          await approveTx.wait();
+          const deposit = await StakeToSTContract().deposit(
+            props.actionRow.address,
+            parseUnitsDecimal(inpValue, props.actionRow.decimal)
+          );
+          deposit.wait();
+          if (deposit.hash) {
+            message.success(t("message.success"));
+            props.onCancel();
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      } else if (segmentedVal === "USDS/USDC") {
+        try {
+          const approveTx = await approveContract.approve(
+            StakeToSCContractAddress,
+            parseUnitsDecimal(inpValue, props.actionRow.decimal)
+          );
+          await approveTx.wait();
+          const deposit = await StakeToSCContract().deposit(
+            props.actionRow.address,
+            parseUnitsDecimal(inpValue, props.actionRow.decimal)
+          );
+          deposit.wait();
+          if (deposit.hash) {
+            message.success(t("message.success"));
+            props.onCancel();
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    } else if (type === 2) {
+      if (segmentedVal === "USDS/USDT") {
+        try {
+          const approveTx = await approveContract.approve(
+            StakeToSTContractAddress,
+            parseUnitsDecimal(inpValue, props.actionRow.decimal)
+          );
+          await approveTx.wait();
+          const deposit = await StakeToSTContract().withdraw(
+            parseUnitsDecimal(inpValue, props.actionRow.decimal)
+          );
+          deposit.wait();
+          if (deposit.hash) {
+            message.success(t("message.success"));
+            props.onCancel();
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      } else if (segmentedVal === "USDS/USDC") {
+        try {
+          const approveTx = await approveContract.approve(
+            StakeToSCContractAddress,
+            parseUnitsDecimal(inpValue, props.actionRow.decimal)
+          );
+          await approveTx.wait();
+          const deposit = await StakeToSCContract().withdraw(
+            parseUnitsDecimal(inpValue, props.actionRow.decimal)
+          );
+          deposit.wait();
+          if (deposit.hash) {
+            message.success(t("message.success"));
+            props.onCancel();
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    }
+    setButtonLoading(false);
+  };
   return (
     <>
       <div className="flex items-end justify-between">
@@ -66,25 +172,50 @@ export default observer(function (props: propsType) {
         </div>
         <CloseOutlined className="w-6 h-6" onClick={props.onCancel} />
       </div>
-      <div className="mt-4">
-        {false ? (
+      <div className="mt-4 mb-3">
+        {props.actionRow.LPList.length === 1 ? (
           <div className="flex items-center text-white">
             <img
               className="w-9 h-9 rounded-full"
-              src={props.actionRow.icon1}
+              src={props.actionRow.icon}
               alt=""
             />
             <img
               className="w-9 h-9 -ml-4 rounded-full"
-              src={props.actionRow.icon2}
+              src={props.actionRow.LPList[0].otherToken.icon}
               alt=""
             />
             <div className="text-20 font-bold ml-2">
-              {props.actionRow.title}
+              {props.actionRow.LPList[0].title}
             </div>
           </div>
         ) : (
-          <Segmented size="large" options={segmentedOption} block />
+          <Segmented
+            size="large"
+            value={segmentedVal}
+            onChange={(e) => setSegmentedVal(e)}
+            options={props.actionRow.LPList.map((item: any) => {
+              return {
+                label: (
+                  <div className="w-full flex items-center justify-center">
+                    <img
+                      className="w-5 h-5 rounded-full"
+                      src={props.actionRow.icon}
+                      alt=""
+                    />
+                    <img
+                      className="w-5 h-5 rounded-full -ml-2.5"
+                      src={item.otherToken.icon}
+                      alt=""
+                    />
+                    <span className="ml-1">{item.title}</span>
+                  </div>
+                ),
+                value: item.title,
+              };
+            })}
+            block
+          />
         )}
       </div>
 
@@ -100,7 +231,8 @@ export default observer(function (props: propsType) {
           </span>
           {type === 1 ? (
             <span>
-              {t("stakeTable.dialog.balance")}:{200.182} USDT
+              {t("stakeTable.dialog.balance")}:
+              {thousandSeparator(props.actionRow.balance)} USDT
             </span>
           ) : null}
         </div>
@@ -113,10 +245,11 @@ export default observer(function (props: propsType) {
             onChange={(e) => setInpValue(e.target.value)}
           />
           <div className="text-white flex items-center gap-x-1">
-            {proportionList.map((item) => {
+            {proportionList.map((item, index) => {
               return (
                 <div
-                  className="border-solid cursor-pointer border-lxl-1 border-black hover:border-white rounded-md whitespace-nowrap"
+                  key={index}
+                  className="border-solid cursor-pointer border-lxl-1 border-white border-opacity-0 hover:border-opacity-100 rounded-md whitespace-nowrap"
                   style={{ padding: "8px 12px" }}
                   onClick={() => updateInputValue(item.value)}
                 >
@@ -138,13 +271,25 @@ export default observer(function (props: propsType) {
           <span className="opacity-50">{t("stakeTable.dialog.sumLiqui")}</span>
           <div className="flex flex-col items-end">
             <div className="flex items-center">
-              100,128.22
-              <img className="w-5 h-5 rounded-full ml-1" src="" alt="" />
+              {thousandSeparator(props.actionRow.sum)}
+              <img
+                className="w-5 h-5 rounded-full ml-1"
+                src={props.actionRow.icon}
+                alt=""
+              />
             </div>
-            <div className="flex mt-1 items-center">
-              12,100
-              <img className="w-5 h-5 rounded-full ml-1" src="" alt="" />
-            </div>
+            {props.actionRow.LPList.filter(
+              (item: any) => item.title === segmentedVal
+            ).map((item: any, index: number) => (
+              <div key={index} className="flex mt-1 items-center">
+                {thousandSeparator(item.otherToken.sum)}
+                <img
+                  className="w-5 h-5 rounded-full ml-1"
+                  src={item.otherToken.icon}
+                  alt=""
+                />
+              </div>
+            ))}
           </div>
         </div>
         <div className="flex pt-5 justify-between">
@@ -162,12 +307,30 @@ export default observer(function (props: propsType) {
             </Tooltip>
           </div>
           <div className="flex items-center">
-            500
-            <img className="w-5 h-5 rounded-full ml-1" src="" alt="" />
+            {thousandSeparator(
+              props.actionRow.myPosition + props.actionRow.currentEarnings
+            )}
+            <img
+              className="w-5 h-5 rounded-full ml-1"
+              src={props.actionRow.icon}
+              alt=""
+            />
           </div>
         </div>
       </div>
-      <MyButton className=" w-full text-18 font-bold h-14">
+      <MyButton
+        className=" w-full text-18 font-bold h-14"
+        loading={buttonLoading}
+        onClick={() => buttonClick()}
+        disabled={
+          type === 1
+            ? Number(inpValue) <= 0
+            : props.actionRow.myPosition + props.actionRow.currentEarnings ===
+                0 ||
+              Number(inpValue) >
+                props.actionRow.myPosition + props.actionRow.currentEarnings
+        }
+      >
         {type === 1
           ? t("stakeTable.dialog.button")
           : t("stakeTable.dialog.takeOutButton")}

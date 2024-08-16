@@ -4,35 +4,50 @@ import Periphery from "./abi/Periphery.json";
 import Swap from "./abi/Swap.json";
 import Stake from "./abi/Stake.json";
 import { ethers } from "ethers";
+import {
+  LPLContractAddress,
+  PeripheryContractAddress,
+  StakeToSCContractAddress,
+  StakeToSTContractAddress,
+  SwapContractAddress,
+} from "./libs/constants";
 export function LPLendContract() {
   const contract = new ethers.Contract(
-    "0x56A7380622a7ee604CE232Cc32D8870a2Fd4Ad13",
+    LPLContractAddress,
     LPLendAbi.abi,
-    getProvider()
+    getProvider().getSigner()
   );
   return contract;
 }
-export function StakeContract() {
+export function StakeToSTContract() {
   const contract = new ethers.Contract(
-    "0x35d11176d445614e5A6B268D2da6463B80F2dFbA",
+    StakeToSTContractAddress,
     Stake.abi,
-    getProvider()
+    getProvider().getSigner()
+  );
+  return contract;
+}
+export function StakeToSCContract() {
+  const contract = new ethers.Contract(
+    StakeToSCContractAddress,
+    Stake.abi,
+    getProvider().getSigner()
   );
   return contract;
 }
 export function PeripheryContract() {
   const contract = new ethers.Contract(
-    "0x6BF16f1755DeA0f74af7337316CEF5b95A47695A",
+    PeripheryContractAddress,
     Periphery.abi,
-    getProvider()
+    getProvider().getSigner()
   );
   return contract;
 }
 export function SwapContract() {
   const contract = new ethers.Contract(
-    "0x66e3dE7C6E77467508CDFFcEA0E84f7302f13B61",
+    SwapContractAddress,
     Swap.abi,
-    getProvider()
+    getProvider().getSigner()
   );
   return contract;
 }

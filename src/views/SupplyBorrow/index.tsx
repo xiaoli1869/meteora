@@ -12,8 +12,19 @@ import QuickSwapDialog from "./QuickSwapDialog";
 import ClaimFeesTable from "@/components/ClaimFeesTable";
 import { Button, Tooltip } from "antd";
 import Lending from "./Lending";
-import { PeripheryContract, StakeContract } from "@/hook/web3/apeContract";
+import {
+  PeripheryContract,
+  StakeToSTContract,
+  StakeToSCContract,
+} from "@/hook/web3/apeContract";
 import Stake from "./Stake";
+import { formatUnitsDecimal } from "../../hook/utils/addressFormat";
+import {
+  USDC_TOKEN,
+  USDS_TOKEN,
+  USDT_TOKEN,
+} from "../../hook/web3/libs/constants";
+import { ethers } from "ethers";
 function SupplyBorrow() {
   const { Store } = useStore();
   const { t } = useTranslation("translations");
@@ -28,7 +39,6 @@ function SupplyBorrow() {
     myBorrowAmount: 36982.12,
     myUnclaimedEarnings: 0,
     myDepositAmount: 0,
-    cumulativeGain: 0,
   });
   const ClaimFeesColumns = [
     {
@@ -78,7 +88,7 @@ function SupplyBorrow() {
               token,
               Store.walletInfo.address
             );
-          return (acc += parseInt(userTotalLPToken._hex, 16));
+          return (acc += formatUnitsDecimal(userTotalLPToken, 18));
         },
         0
       );
@@ -89,16 +99,40 @@ function SupplyBorrow() {
               token,
               Store.walletInfo.address
             );
-          return (acc += parseInt(userTotalLPToken._hex, 16));
+          return (acc += formatUnitsDecimal(userTotalLPToken, 18));
         },
         0
       );
-      const myDepositAmount = await StakeContract().userTotalDeposits(
-        Store.walletInfo.address
-      );
-      newObj.myDepositAmount = parseInt(myDepositAmount._hex, 16);
+      newObj.myDepositAmount =
+        formatUnitsDecimal(
+          await StakeToSCContract().userTotalDeposits(
+            Store.walletInfo.address,
+            USDC_TOKEN.address
+          ),
+          USDC_TOKEN.decimals
+        ) +
+        formatUnitsDecimal(
+          await StakeToSCContract().userTotalDeposits(
+            Store.walletInfo.address,
+            USDS_TOKEN.address
+          ),
+          USDS_TOKEN.decimals
+        ) +
+        formatUnitsDecimal(
+          await StakeToSTContract().userTotalDeposits(
+            Store.walletInfo.address,
+            USDS_TOKEN.address
+          ),
+          USDS_TOKEN.decimals
+        ) +
+        formatUnitsDecimal(
+          await StakeToSTContract().userTotalDeposits(
+            Store.walletInfo.address,
+            USDT_TOKEN.address
+          ),
+          USDT_TOKEN.decimals
+        );
       setStatisticalData(newObj);
-      // console.log(previewProtTotalLoan);
     }
   };
   const openQuickSwap = () => {
@@ -108,8 +142,7 @@ function SupplyBorrow() {
   };
   return (
     <CenterContent>
-      <Header />
-      <div className="w-full flex gap-x-2 mt-6">
+      <div className="w-full flex gap-x-2">
         <div
           className="w-full p-4 rounded-lg text-white"
           style={{
@@ -216,17 +249,6 @@ function SupplyBorrow() {
                   : "--"}
               </div>
             </div>
-            <div
-              className="pl-6"
-              style={{ borderLeft: "1px solid rgba(255, 255, 255, 0.2)" }}
-            >
-              <div className="opacity-50">{t("supplyBorrowData.tab2_5")}</div>
-              <div className="mt-1 font-bold text-18">
-                {Store.getIsContacted()
-                  ? "$" + thousandSeparator(statisticalData.cumulativeGain)
-                  : "--"}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -238,7 +260,7 @@ function SupplyBorrow() {
         onCancel={() => setQuickSwapShow(false)}
         title={t("supplyBorrowData.quickSwap.title")}
       >
-        <QuickSwapDialog />
+        <QuickSwapDialog close={() => setQuickSwapShow(false)} />
       </MyModal>
       <MyModal
         width={580}
