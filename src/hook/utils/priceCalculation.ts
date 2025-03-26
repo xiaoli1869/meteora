@@ -10,27 +10,20 @@ interface PriceRange {
  * @param currentPrice 当前价格 (token1/token0)
  * @param binStep bin步长
  * @param numBins bin总数量
- * @returns 价格区间对象，包含最小价格和最大价格
+ * @returns 价格区间数组
  */
 export function calculatePriceRange(
   currentPrice: number,
   binStep: number,
-  numBins: number
+  numBins: number,
+  dividerPosition: number
 ): number[] {
-  // 确保输入参数有效
-  if (currentPrice <= 0 || binStep <= 0 || numBins <= 0) {
-    throw new Error("Invalid input parameters");
-  }
+  if (currentPrice <= 0 || binStep <= 0) return [];
 
-  // 计算单个bin的价格变化率
-  const binStepRate = 1 + binStep / 10000; // 例如：binStep为10时，binStepRate为1.001
-  const lowerBound = -Math.ceil(numBins / 2);
-  const upperBound = Math.floor(numBins / 2);
-  // 创建价格数组
+  const binStepRate = 1 + binStep / 10000;
   const prices: number[] = [];
 
-  // 从-35到+34遍历计算每个bin的价格
-  for (let i = lowerBound; i <= upperBound; i++) {
+  for (let i = -dividerPosition; i <= numBins - dividerPosition; i++) {
     const price = currentPrice * Math.pow(binStepRate, i);
     prices.push(formatPrice(price));
   }
@@ -39,11 +32,116 @@ export function calculatePriceRange(
 }
 
 /**
- * 格式化价格，保留指定位数的小数
- * @param price 价格
- * @param decimals 小数位数
- * @returns 格式化后的价格
+ * 计算权重分布
+ */
+function calculateWeights(
+  prices: number[],
+  currentPrice: number,
+  strategy: string
+): number[] {
+  const length = prices.length;
+  const currentIndex = prices.findIndex((p) => p >= currentPrice);
+
+  switch (strategy) {
+    case "spot":
+      return new Array(length).fill(1);
+
+    case "curve": {
+      // 调整方差参数，使曲线更加平滑
+      const variance = Math.pow(length / 3, 2);
+      // 使用高斯分布函数生成权重
+      return prices.map((_, i) => {
+        // 计算与当前价格的距离
+        const distance = Math.abs(i - currentIndex);
+        // 应用高斯分布公式
+        return Math.exp(-Math.pow(distance, 2) / (2 * variance));
+      });
+    }
+
+    case "bidAsk": {
+      // 创建线性递增的分布，在当前价格处最低，两端最高
+      return prices.map((_, i) => {
+        // 计算与当前价格的距离
+        const distance = Math.abs(i - currentIndex);
+        // 使用线性递增函数，确保最小值为0.1，最大值为1
+        // 使用length/2作为分母，使分布更加合理
+        return Math.min(0.1 + distance / (length / 2), 1);
+      });
+    }
+
+    default:
+      return new Array(length).fill(1);
+  }
+}
+
+/**
+ * 格式化价格精度
  */
 export function formatPrice(price: number, decimals: number = 6): number {
   return Number(price.toFixed(decimals));
+}
+
+/**
+ * 计算代币分配策略
+ */
+export function calculateTokenAllocation(
+  prices: number[],
+  firstTokenAmount: number, // token0数量（如TRUMP）
+  secondTokenAmount: number, // token1数量（如USDC）
+  currentPrice: number, // 当前价格（USDC/TRUMP）
+  strategy: string = "spot" // 分配策略
+): Array<{ token0: number; token1: number }> {
+  if (prices.length === 0 || (firstTokenAmount <= 0 && secondTokenAmount <= 0))
+    return [];
+
+  // 1. 计算权重分布
+  const weights = calculateWeights(prices, currentPrice, strategy);
+  const currentIndex = prices.findIndex((p) => p >= currentPrice);
+
+  // 2. 分别计算左右两侧的权重总和
+  const leftWeights = weights.slice(0, currentIndex);
+  const rightWeights = weights.slice(currentIndex);
+
+  const totalLeftWeight = leftWeights.reduce((a, b) => a + b, 0);
+  const totalRightWeight = rightWeights.reduce((a, b) => a + b, 0);
+
+  // 3. 遍历每个价格区间分配代币
+  return prices.map((price, index) => {
+    if (index < currentIndex) {
+      // 价格低于当前价格，只使用token1
+      if (totalLeftWeight <= 0 || secondTokenAmount <= 0) {
+        return { token0: 0, token1: 0 };
+      }
+      const token1Amount =
+        secondTokenAmount * (weights[index] / totalLeftWeight);
+      return {
+        token0: 0,
+        token1: formatPrice(token1Amount),
+      };
+    } else if (index > currentIndex) {
+      // 价格高于当前价格，只使用token0
+      if (totalRightWeight <= 0 || firstTokenAmount <= 0) {
+        return { token0: 0, token1: 0 };
+      }
+      const token0Amount =
+        firstTokenAmount * (weights[index] / totalRightWeight);
+      return {
+        token0: formatPrice(token0Amount),
+        token1: 0,
+      };
+    } else {
+      // 当前价格区间，合理分配两种代币
+      // 如果是当前价格，我们可以选择平均分配两种代币的价值
+      // 或者根据权重比例分配
+      const token0Portion =
+        totalRightWeight > 0 ? weights[index] / (2 * totalRightWeight) : 0;
+      const token1Portion =
+        totalLeftWeight > 0 ? weights[index] / (2 * totalLeftWeight) : 0;
+
+      return {
+        token0: formatPrice(firstTokenAmount * token0Portion),
+        token1: formatPrice(secondTokenAmount * token1Portion),
+      };
+    }
+  });
 }

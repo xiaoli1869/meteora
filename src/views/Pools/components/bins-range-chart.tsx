@@ -5,32 +5,43 @@ import { Slider } from "antd";
 
 interface DataPoint {
   price: number;
-  value: number;
+  value: { token0: number; token1: number };
 }
-type BinsRangeChartProps = {
+// 修改props接口
+interface BinsRangeChartProps {
   bins: number;
-};
-export default function BinsRangeChart(props: BinsRangeChartProps) {
+  prices: number[];
+  allocations: { token0: number; token1: number }[];
+  token0: string;
+  token1: string;
+  dividerPosition: number;
+  onDividerPositionChange: (value: number) => void;
+}
+
+// 使用真实数据替换示例数据
+export default function BinsRangeChart({
+  bins,
+  prices,
+  allocations,
+  token0,
+  token1,
+  dividerPosition,
+  onDividerPositionChange,
+}: BinsRangeChartProps) {
+  // 生成真实数据
+  const data: DataPoint[] = prices.map((price, index) => ({
+    price,
+    value: allocations[index] || { token0: 0, token1: 0 },
+  }));
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
-  const [dividerPosition, setDividerPosition] = useState((props.bins + 1) / 2); // Percentage position
-  const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [tooltipData, setTooltipData] = useState({ price: 0, trump: 0 });
-  const [tooltipPosition, setTooltipPosition] = useState({ left: 0, top: 0 });
-
-  // Sample data
-  const data: DataPoint[] = Array.from({ length: 70 }, (_, i) => ({
-    price: 11.15 + i * 0.01,
-    value: Math.random() * 0.5 + 0.5,
-  }));
-
   const dividerPrice = useCallback(() => {
-    // Calculate index based on the new slider range (0 to props.bins + 1)
+    // Calculate index based on the new slider range (0 to bins + 1)
     // Ensure the index is within bounds of the data array
-    const ratio = dividerPosition / (props.bins + 1);
+    const ratio = dividerPosition / (bins + 1);
     const index = Math.min(Math.floor(data.length * ratio), data.length - 1);
-    return data[index]?.price || 11.53;
-  }, [dividerPosition, data, props.bins]);
+    return data[index]?.price;
+  }, [dividerPosition, data, bins]);
 
   const updateChart = useCallback(() => {
     if (!chartInstance.current) return;
@@ -45,7 +56,23 @@ export default function BinsRangeChart(props: BinsRangeChartProps) {
         top: 60,
         bottom: 40,
       },
-      tooltip: {},
+      tooltip: {
+        formatter: (params: any) => {
+          const dataIndex = params.dataIndex;
+          const price = data[dataIndex].price;
+          const value = data[dataIndex].value;
+          // 根据价格与分割线的关系显示不同的代币信息
+          const isLeftSide = price < dividerPriceValue;
+          return `
+            Price: ${price}<br/>
+            ${
+              value.token0
+                ? token0 + ":" + value.token0
+                : token1 + ":" + value.token1
+            }
+          `;
+        },
+      },
       xAxis: {
         type: "category",
         data: data.map((item) => item.price.toFixed(2)),
@@ -71,7 +98,13 @@ export default function BinsRangeChart(props: BinsRangeChartProps) {
         {
           name: "Price",
           type: "bar",
-          data: data.map((item) => item.value),
+          // 根据分割线位置显示不同的数据（左边token1，右边token0）
+          data: data.map((item) => {
+            const price = item.price;
+            return price < dividerPriceValue
+              ? item.value.token1
+              : item.value.token0;
+          }),
           barWidth: "60%",
           itemStyle: {
             // Use a callback function to determine color based on data point
@@ -89,28 +122,7 @@ export default function BinsRangeChart(props: BinsRangeChartProps) {
   useEffect(() => {
     if (chartRef.current) {
       chartInstance.current = echarts.init(chartRef.current);
-
-      // Handle chart click for tooltip
-      chartInstance.current.on("click", (params: any) => {
-        if (chartRef.current) {
-          const index = params.dataIndex;
-          const price = data[index].price;
-          const trump = 0.032666; // Sample value, would be calculated based on real data
-
-          setTooltipData({ price, trump });
-          setTooltipPosition({
-            left: params.event.offsetX,
-            top: 0,
-          });
-          setTooltipVisible(true);
-
-          // Hide tooltip after 3 seconds
-          setTimeout(() => setTooltipVisible(false), 3000);
-        }
-      });
-
       updateChart();
-
       // Handle resize
       const handleResize = () => {
         chartInstance.current?.resize();
@@ -132,21 +144,12 @@ export default function BinsRangeChart(props: BinsRangeChartProps) {
 
   // Handle slider change
   const handleSliderChange = (value: number) => {
-    setDividerPosition(value);
+    onDividerPositionChange(value);
   };
 
   return (
     <div className="">
       <div className="relative">
-        {/* <div className="absolute left-1/2 top-0 transform -translate-x-1/2 bg-[#191C32]/85 text-white px-4 py-2 rounded-lg z-20">
-          <div className="text-center">
-            <div className="text-sm">Current Price</div>
-            <div className="font-bold">
-              {dividerPrice().toFixed(2)} USDC/TRUMP
-            </div>
-          </div>
-        </div> */}
-
         <div className="h-56 relative">
           <div ref={chartRef} className="w-full h-full"></div>
         </div>
@@ -157,14 +160,14 @@ export default function BinsRangeChart(props: BinsRangeChartProps) {
             className=""
             onChange={handleSliderChange}
             min={0}
-            max={props.bins + 1}
+            max={bins + 1}
             step={1}
-            // tooltip={{ formatter: null }}
+            tooltip={{ formatter: null }}
           />
           <div
             className="h-[150px] w-0.5 bg-white absolute top-0 -translate-y-full -translate-x-1/2"
             style={{
-              left: `${(dividerPosition / (props.bins + 1)) * 100}%`,
+              left: `${(dividerPosition / (bins + 1)) * 100}%`,
             }}
           />
         </div>

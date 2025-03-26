@@ -28,8 +28,10 @@ import { ethers } from "ethers";
 import { ERC20_ABI } from "../../../hook/web3/libs/constants";
 import { observer } from "mobx-react-lite";
 import BinsRangeChart from "./bins-range-chart";
-import { set } from "mobx";
-import { calculatePriceRange } from "../../../hook/utils/priceCalculation";
+import {
+  calculatePriceRange,
+  calculateTokenAllocation,
+} from "../../../hook/utils/priceCalculation";
 
 // Using types from type.ts
 
@@ -37,7 +39,7 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   const { pairName, token0, token1 } = pool;
   const { Store } = useStore();
   // 是否自动填充
-  const [autoFill, setAutoFill] = useState(true);
+  const [autoFill, setAutoFill] = useState(false);
   // 波动策略类型: spot/curve/bidAsk
   const [volatilityStrategy, setVolatilityStrategy] = useState<string>("spot");
   // 第一个代币输入金额
@@ -64,10 +66,15 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   const [numBins, setNumBins] = useState<number>(69); // Default number of bins
   // 池子信息
   const [poolInfo, setPoolInfo] = useState<any>(null);
-
   // 代币对名称分割
   const [firstToken, secondToken] = pairName.split("-");
-
+  const [priceAllocations, setPriceAllocations] = useState<
+    { token0: number; token1: number }[]
+  >([]);
+  const [binsX, setBinsX] = useState<number[]>([]);
+  const [dividerPosition, setDividerPosition] = useState<number>(
+    Math.ceil(numBins / 2)
+  );
   useEffect(() => {
     init();
   }, [pool.poolAddress, Store.walletInfo.address]);
@@ -91,58 +98,73 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
       setToken1Balance(Number(res || 0));
     });
   };
-  // useEffect(() => {
-  //   getTokenPrice().then((res) => {
-  //     setCurrentPrice(res.price);
-  //     if (res.price) {
-  //       // const { maxPrice, minPrice } = getPriceRangeFromBin(
-  //       //   res.price,
-  //       //   numBins,
-  //       //   res.tickSpacing
-  //       // );
-  //       // setMinPrice(Number(minPrice.toFixed(6)));
-  //       // setMaxPrice(Number(maxPrice.toFixed(6)));
-  //       // setPricePercentageMin(
-  //       //   Number(((minPrice / res.price - 1) * 100).toFixed(2))
-  //       // );
-  //       // setPricePercentageMax(
-  //       //   Number(((maxPrice / res.price - 1) * 100).toFixed(2))
-  //       // );
-  //     }
-  //   });
-  // }, []);
 
-  // Handle input changes
+  const handleDividerPositionChange = (value: number) => {
+    setDividerPosition(value);
+  };
+  useEffect(() => {
+    const binsX1 = calculatePriceRange(
+      currentPrice,
+      pool.binstep,
+      numBins,
+      dividerPosition
+    );
+    setBinsX(binsX1);
+    setMinPrice(binsX1[0]);
+    setMaxPrice(binsX1[binsX1.length - 1]);
+    setPricePercentageMin(
+      Number((((binsX1[0] - currentPrice) / currentPrice) * -100).toFixed(2))
+    );
+    setPricePercentageMax(
+      Number(
+        (
+          ((binsX1[binsX1.length - 1] - currentPrice) / currentPrice) *
+          100
+        ).toFixed(2)
+      )
+    );
+    // // 新增：计算代币分配
+    const allocations = calculateTokenAllocation(
+      binsX1,
+      Number(firstTokenAmount),
+      Number(secondTokenAmount),
+      currentPrice,
+      volatilityStrategy
+    );
+    setPriceAllocations(allocations);
+
+    // 将分配数据传递给图表
+    // console.log("Price Allocations:", allocations);
+    // 计算token0和token1的总和
+    const token0Total = priceAllocations.reduce(
+      (sum, allocation) => sum + allocation.token0,
+      0
+    );
+    const token1Total = priceAllocations.reduce(
+      (sum, allocation) => sum + allocation.token1,
+      0
+    );
+    console.log("Token0 Total:", token0Total);
+    console.log("Token1 Total:", token1Total);
+  }, [
+    firstTokenAmount,
+    secondTokenAmount,
+    dividerPosition,
+    volatilityStrategy,
+  ]);
   const handleFirstTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value) || 0;
     setFirstTokenAmount(value.toString());
-    const binsX = calculatePriceRange(currentPrice, pool.binstep, numBins);
-    console.log(binsX);
-    // if (!autoFill || !value) {
-    //   return;
-    // }
   };
   const handleSecondTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSecondTokenAmount(value);
-    if (!autoFill || !value) {
-      return;
-    }
   };
 
-  // Reset price range to default
   const handleResetPrice = () => {
-    if (currentPrice) {
-      const min = currentPrice * 0.85;
-      const max = currentPrice * 1.15;
-      setMinPrice(min);
-      setMaxPrice(max);
-      setPricePercentageMin(-15);
-      setPricePercentageMax(15);
-    }
+    setDividerPosition(Math.ceil(numBins / 2));
   };
 
-  // Handle HALF and MAX buttons
   const handleHalfFirstToken = () => {
     setFirstTokenAmount((token0Balance / 2).toString());
   };
@@ -152,15 +174,12 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   };
 
   const handleHalfSecondToken = () => {
-    // Mock balance value - in a real app, this would come from wallet
     setSecondTokenAmount((token1Balance / 2).toString());
   };
 
   const handleMaxSecondToken = () => {
     setSecondTokenAmount(token1Balance.toString());
   };
-
-  // Check if user has entered any deposit amount
   const hasDepositAmount = useMemo(
     () => !!firstTokenAmount || !!secondTokenAmount,
     [firstTokenAmount, secondTokenAmount]
@@ -207,142 +226,41 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
     const value = e.target.value;
     setPricePercentageMax(value);
   };
-  const handelNumBinsChange = (e: any) => {
-    // const value = e.target.value;
-    // setNumBins(value);
-    // getTokenPrice().then((res) => {
-    //   const { maxPrice, minPrice } = getPriceRangeFromBin(
-    //     currentPrice,
-    //     value,
-    //     res.tickSpacing
-    //   );
-    //   setMinPrice(Number(minPrice.toFixed(6)));
-    //   setMaxPrice(Number(maxPrice.toFixed(6)));
-    //   setPricePercentageMin(
-    //     Number(((minPrice / currentPrice - 1) * 100).toFixed(2))
-    //   );
-    //   setPricePercentageMax(
-    //     Number(((maxPrice / currentPrice - 1) * 100).toFixed(2))
-    //   );
-    // });
-  };
+  const handelNumBinsChange = (e: any) => {};
   const handleAddLiquidity = async () => {
-    const poolInfo = await getPoolInfo(pool.poolAddress);
-    const tick = poolInfo.tick;
-    const tickSpacing = poolInfo.tickSpacing;
+    // const poolInfo = await getPoolInfo(pool.poolAddress);
+    // const tick = poolInfo.tick;
+    // const tickSpacing = poolInfo.tickSpacing;
     // setLoading(true);
-    // const lowerTick = priceToTick(minPrice);
-    // const upperTick = priceToTick(maxPrice);
-    const firstTokenAmount = 1000000;
-    const secondTokenAmount = 1000000;
-    // // 设置滑点保护为1%
-    // const amount0Min = Number(firstTokenAmount) * (1 - 1);
-    // const amount1Min = Number(secondTokenAmount) * (1 - 1);
-
-    const approveToken0 = await new ethers.Contract(
-      token0.token.address,
-      ERC20_ABI,
-      getProvider().getSigner()
-    ).approve(
-      PoolsContract().address,
-      parseUnitsDecimal(String(firstTokenAmount), token0.token.decimals)
-    );
-    const approveToken1 = await new ethers.Contract(
-      token1.token.address,
-      ERC20_ABI,
-      getProvider().getSigner()
-    ).approve(
-      PoolsContract().address,
-      parseUnitsDecimal(String(secondTokenAmount), token1.token.decimals)
-    );
-    await approveToken0.wait();
-    await approveToken1.wait();
-    // // 需要将金额转换为正确的BigNumber格式
-    const token0Amount = parseUnitsDecimal(
-      String(firstTokenAmount),
-      token0.token.decimals
-    );
-    const token1Amount = parseUnitsDecimal(
-      String(secondTokenAmount),
-      token1.token.decimals
-    );
-    // const amount0MinBN = parseUnitsDecimal(
-    //   String(amount0Min),
+    // const firstTokenAmount = 1000000;
+    // const secondTokenAmount = 1000000;
+    // const approveToken0 = await new ethers.Contract(
+    //   token0.token.address,
+    //   ERC20_ABI,
+    //   getProvider().getSigner()
+    // ).approve(
+    //   PoolsContract().address,
+    //   parseUnitsDecimal(String(firstTokenAmount), token0.token.decimals)
+    // );
+    // const approveToken1 = await new ethers.Contract(
+    //   token1.token.address,
+    //   ERC20_ABI,
+    //   getProvider().getSigner()
+    // ).approve(
+    //   PoolsContract().address,
+    //   parseUnitsDecimal(String(secondTokenAmount), token1.token.decimals)
+    // );
+    // await approveToken0.wait();
+    // await approveToken1.wait();
+    // // // 需要将金额转换为正确的BigNumber格式
+    // const token0Amount = parseUnitsDecimal(
+    //   String(firstTokenAmount),
     //   token0.token.decimals
     // );
-    // const amount1MinBN = parseUnitsDecimal(
-    //   String(amount1Min),
+    // const token1Amount = parseUnitsDecimal(
+    //   String(secondTokenAmount),
     //   token1.token.decimals
     // );
-    // console.log(
-    //   [
-    //     {
-    //       token0: token0.token.address,
-    //       token1: token1.token.address,
-    //       fee: 3000,
-    //       token0Amount: token0Amount.toString(), // 确保转换为字符串
-    //       token1Amount: token1Amount.toString(), // 确保转换为字符串
-    //       tickLower: lowerTick,
-    //       tickUpper: upperTick,
-    //       amount0Min: amount0MinBN.toString(), // 确保转换为字符串
-    //       amount1Min: amount1MinBN.toString(), // 确保转换为字符串
-    //       recipient: Store.walletInfo.address,
-    //     },
-    //   ],
-    //   {
-    //     caller: Store.walletInfo.address,
-    //     token0: token0.token.address,
-    //     token1: token1.token.address,
-    //     deposit0: token0Amount.toString(), // 确保转换为字符串
-    //     deposit1: token1Amount.toString(), // 确保转换为字符串
-    //   }
-    // );
-    console.log(
-      [
-        {
-          token0: token0.token.address,
-          token1: token1.token.address,
-          fee: 3000,
-          token0Amount: token0Amount.toString(), // 确保转换为字符串
-          token1Amount: token1Amount.toString(), // 确保转换为字符串
-          tickLower: tick - tickSpacing * 1,
-          tickUpper: tick + tickSpacing * 1,
-          amount0Min: 0, // 确保转换为字符串
-          amount1Min: 0, // 确保转换为字符串
-          recipient: Store.walletInfo.address,
-        },
-      ],
-      {
-        caller: Store.walletInfo.address,
-        token0: token0.token.address,
-        token1: token1.token.address,
-        deposit0: token0Amount.toString(), // 确保转换为字符串
-        deposit1: token1Amount.toString(), // 确保转换为字符串
-      }
-    );
-    const rea = await PoolsContract().batchMintLP(
-      [
-        {
-          token0: token0.token.address,
-          token1: token1.token.address,
-          fee: 3000,
-          token0Amount: token0Amount.toString(), // 确保转换为字符串
-          token1Amount: token1Amount.toString(), // 确保转换为字符串
-          tickLower: tick - tickSpacing * 1,
-          tickUpper: tick + tickSpacing * 1,
-          amount0Min: 0, // 确保转换为字符串
-          amount1Min: 0, // 确保转换为字符串
-          recipient: Store.walletInfo.address,
-        },
-      ],
-      {
-        caller: Store.walletInfo.address,
-        token0: token0.token.address,
-        token1: token1.token.address,
-        deposit0: token0Amount.toString(), // 确保转换为字符串
-        deposit1: token1Amount.toString(), // 确保转换为字符串
-      }
-    );
     // const rea = await PoolsContract().batchMintLP(
     //   [
     //     {
@@ -351,10 +269,10 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
     //       fee: 3000,
     //       token0Amount: token0Amount.toString(), // 确保转换为字符串
     //       token1Amount: token1Amount.toString(), // 确保转换为字符串
-    //       tickLower: lowerTick,
-    //       tickUpper: upperTick,
-    //       amount0Min: amount0MinBN.toString(), // 确保转换为字符串
-    //       amount1Min: amount1MinBN.toString(), // 确保转换为字符串
+    //       tickLower: tick - tickSpacing * 1,
+    //       tickUpper: tick + tickSpacing * 1,
+    //       amount0Min: 0, // 确保转换为字符串
+    //       amount1Min: 0, // 确保转换为字符串
     //       recipient: Store.walletInfo.address,
     //     },
     //   ],
@@ -366,8 +284,8 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
     //     deposit1: token1Amount.toString(), // 确保转换为字符串
     //   }
     // );
-    console.log(rea);
-    setLoading(false);
+    // console.log(rea);
+    // setLoading(false);
   };
   return (
     <div className="py-4">
@@ -560,7 +478,15 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
 
             {/* Price Chart */}
             <div className="bg-[#1a2235] rounded-md mb-4">
-              <BinsRangeChart bins={numBins} />
+              <BinsRangeChart
+                prices={binsX}
+                allocations={priceAllocations}
+                bins={numBins}
+                token0={firstToken}
+                token1={secondToken}
+                dividerPosition={dividerPosition}
+                onDividerPositionChange={handleDividerPositionChange}
+              />
             </div>
 
             {/* Price Inputs */}
