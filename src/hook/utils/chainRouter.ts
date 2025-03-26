@@ -1,23 +1,11 @@
-export const CHAIN_NAME_ID_MAP = {
-  MAINNET: 1,
-  Ethereum: 1,
-  EthereumSepolia: 11155111,
-  Goerli: 5,
-  BSC: 56,
-  Avalanche: 43114,
-  Polygon: 137,
-  Cronos: 25,
-  Optimism: 10,
-  Arbitrum: 42161,
-  Fantom: 250,
-  Klaytn: 8217,
-  Kava: 2222,
-  BlastSepolia: 168587773,
-  Blast: 81457,
-  Mint: 185,
-};
-
 export const chainMap: any = {
+  "10143": {
+    name: "Monad Testnet",
+    symbol: "MON",
+    icon: "https://cdn.prod.website-files.com/667c57e6f9254a4b6d914440/667d7104644c621965495f6e_LogoMark.svg",
+    symbolIcon:
+      "https://cdn.prod.website-files.com/667c57e6f9254a4b6d914440/667d7104644c621965495f6e_LogoMark.svg",
+  },
   "1": {
     name: "Ethereum",
     symbol: "ETH",

@@ -1,6 +1,13 @@
 import { Token } from "@uniswap/sdk-core";
 import { FeeAmount } from "@uniswap/v3-sdk";
-import { TOKEN_A, TOKEN_B, TokenA_TokenB_Pool } from "./libs/constants";
+import {
+  MTA,
+  MTA_MTB_Pool,
+  MTB,
+  TOKEN_A,
+  TOKEN_B,
+  TokenA_TokenB_Pool,
+} from "./libs/constants";
 
 // Sets if the example should run locally or on chain
 export enum Environment {
@@ -37,11 +44,11 @@ export const CurrentConfig: ExampleConfig = {
     mainnet: "https://ethereum-sepolia-rpc.publicnode.com",
   },
   tokens: {
-    token0: TOKEN_A,
+    token0: MTA,
     token0Amount: 50,
-    token1: TOKEN_B,
+    token1: MTB,
     token1Amount: 50,
     poolFee: FeeAmount.LOW,
-    pool: TokenA_TokenB_Pool,
+    pool: MTA_MTB_Pool,
   },
 };

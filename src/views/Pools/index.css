@@ -1,0 +1,77 @@
+/* Custom styles for the Pools component */
+
+/* Ant Design Collapse override styles */
+.ant-collapse {
+    background: transparent !important;
+}
+
+.ant-collapse-item {
+    border-bottom: 1px solid rgba(55, 65, 81, 0.5) !important;
+}
+
+.ant-collapse-header {
+    padding: 0 !important;
+    align-items: center !important;
+}
+
+.ant-collapse-content {
+    background: transparent !important;
+    color: white !important;
+}
+
+.ant-collapse-content-box {
+    padding: 0 !important;
+}
+
+.ant-collapse-expand-icon {
+    padding-right: 0 !important;
+    position: absolute !important;
+    right: 16px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+/* Position collapse specific styles */
+.position-collapse .ant-collapse-header {
+    padding: 0 !important;
+    align-items: center !important;
+}
+
+.position-collapse .ant-collapse-content {
+    background: transparent !important;
+    color: white !important;
+}
+
+.position-collapse .ant-collapse-content-box {
+    padding: 0 !important;
+}
+
+.position-collapse .ant-collapse-expand-icon {
+    padding-right: 0 !important;
+}
+
+.ant-collapse-content-box {
+    border-top: 1px solid rgba(55, 65, 81, 0.5) !important;
+}
+
+.ant-slider {
+    margin: 0px;
+}
+
+.ant-slider .ant-slider-rail {
+    background: rgba(0, 0, 0, 0.3);
+
+}
+
+.ant-slider:hover .ant-slider-rail {
+    background: rgba(0, 0, 0, 0.3);
+
+}
+
+.ant-slider .ant-slider-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.ant-slider:hover .ant-slider-track {
+    background: rgba(0, 0, 0, 0.3);
+}

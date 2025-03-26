@@ -3,6 +3,7 @@ import LPLendAbi from "./abi/LPLend.json";
 import Periphery from "./abi/Periphery.json";
 import Swap from "./abi/Swap.json";
 import Stake from "./abi/Stake.json";
+import Pools from "./abi/BatchLP.json";
 import { ethers } from "ethers";
 import {
   LPLContractAddress,
@@ -10,6 +11,7 @@ import {
   StakeToSCContractAddress,
   StakeToSTContractAddress,
   SwapContractAddress,
+  PoolsContractAddress,
 } from "./libs/constants";
 export function LPLendContract() {
   const contract = new ethers.Contract(
@@ -47,6 +49,14 @@ export function SwapContract() {
   const contract = new ethers.Contract(
     SwapContractAddress,
     Swap.abi,
+    getProvider().getSigner()
+  );
+  return contract;
+}
+export function PoolsContract() {
+  const contract = new ethers.Contract(
+    PoolsContractAddress,
+    Pools.abi,
     getProvider().getSigner()
   );
   return contract;

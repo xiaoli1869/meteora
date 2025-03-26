@@ -11,7 +11,9 @@ export default function () {
   const cacheService = useCacheService();
   const changeToChain = async (item: any) => {
     if (item.supported) {
-      if (await changeNetwork(item.id)) {
+      const res = await changeNetwork(item.id);
+      console.log(res);
+      if (res) {
         location.reload();
       }
     }

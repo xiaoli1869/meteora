@@ -1,12 +1,20 @@
 export default [
   {
-    id: 11155111,
-    name: "ETH Sepolia",
-    symbol: "ETH",
-    icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/ETH.png",
+    id: 10143,
+    name: "Monad Testnet",
+    symbol: "MON",
+    icon: "https://cdn.prod.website-files.com/667c57e6f9254a4b6d914440/667d7104644c621965495f6e_LogoMark.svg",
     supported: true,
-    explorer: "https://sepolia.etherscan.io/",
+    explorer: "https://testnet-rpc.monad.xyz/",
   },
+  // {
+  //   id: 11155111,
+  //   name: "ETH Sepolia",
+  //   symbol: "ETH",
+  //   icon: "https://abm-app-image.s3.ap-northeast-1.amazonaws.com/coins/ETH.png",
+  //   supported: true,
+  //   explorer: "https://sepolia.etherscan.io/",
+  // },
   // {
   //   id: 81457,
   //   name: "Blast",

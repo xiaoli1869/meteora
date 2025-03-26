@@ -105,7 +105,7 @@ const Header = () => {
       <div className="w-full flex justify-between pt-4 pb-4 mb-6">
         <img className="h-5" src={logo} alt="" />
         <div className="flex items-center gap-x-6">
-          {tabList.map((item, index) => {
+          {/* {tabList.map((item, index) => {
             return (
               <span
                 className="font-bold cursor-pointer"
@@ -121,7 +121,7 @@ const Header = () => {
           })}
           <Popover content={content}>
             <img className="w-5 h-5 cursor-pointer" src={language} alt="" />
-          </Popover>
+          </Popover> */}
           {Store.getIsContacted() ? (
             Store.getIsSupportedChain() ? (
               <div

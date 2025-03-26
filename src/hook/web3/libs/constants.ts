@@ -14,9 +14,27 @@ export const StakeToSCContractAddress =
 export const PeripheryContractAddress =
   "0x6BF16f1755DeA0f74af7337316CEF5b95A47695A";
 export const SwapContractAddress = "0x66e3dE7C6E77467508CDFFcEA0E84f7302f13B61";
+export const PoolsContractAddress =
+  "0xa2Dd8Cb22e59Ff7f2d70DB9FCa32e51785dF7f5c";
 
 // Currencies and Tokens
 const SEPOLIA_CHAIN_ID = 11155111;
+const MONAD_CHAIN_ID = 10143;
+export const MTA = new Token(
+  MONAD_CHAIN_ID,
+  "0x52fde9Ae411FF141EE17715E9BCb82Dde4b7ec63",
+  18,
+  "MTA",
+  "mta"
+);
+
+export const MTB = new Token(
+  MONAD_CHAIN_ID,
+  "0x7E9B9f276aA68cC547Aa0Adc461e2F8A7640959b",
+  18,
+  "MTB",
+  "mtb"
+);
 export const USDS_TOKEN = new Token(
   SEPOLIA_CHAIN_ID,
   "0xFAC6EfeFb35a2445C8de7Bf0A1B55AC794AaeC73",
@@ -56,6 +74,7 @@ export const USDC_TOKEN = new Token(
   "USD Coin"
 );
 export const TokenA_TokenB_Pool = "0x99aCda102AF2A364FedF35199ebC64781af30BA9";
+export const MTA_MTB_Pool = "0xC797b1A48B5d0f96c1D47E95a95530484733Be91";
 export const USDS_USDT_Pool = "0x5d671210bB837CB006867e0499c8f8D0d3b72983";
 // Transactions
 export const MAX_FEE_PER_GAS = "100000000000";

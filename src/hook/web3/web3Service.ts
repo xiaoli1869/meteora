@@ -13,6 +13,17 @@ let selectedWallet: any = null;
 let provider: any = null;
 
 const ChainCfg: any = {
+  10143: {
+    chainId: "0x279F",
+    chainName: "Monad Testnet",
+    nativeCurrency: {
+      name: "MON",
+      symbol: "MON",
+      decimals: 18,
+    },
+    rpcUrls: ["https://testnet-rpc.monad.xyz/"],
+    blockExplorerUrls: ["https://testnet.monadexplorer.com/"],
+  },
   11155111: {
     chainId: "0x11155111",
     chainName: "Ethereum Sepolia",

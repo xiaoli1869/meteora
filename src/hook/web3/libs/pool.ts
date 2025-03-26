@@ -13,13 +13,13 @@ interface PoolInfo {
   tick: number;
 }
 
-export async function getPoolInfo(): Promise<PoolInfo> {
+export async function getPoolInfo(poolAdress: string): Promise<PoolInfo> {
   const provider = getProvider();
   if (!provider) {
     throw new Error("No provider");
   }
   const poolContract = new ethers.Contract(
-    CurrentConfig.tokens.pool,
+    poolAdress,
     IUniswapV3PoolABI.abi,
     provider
   );
