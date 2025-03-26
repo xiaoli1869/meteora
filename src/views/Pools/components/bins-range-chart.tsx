@@ -36,8 +36,6 @@ export default function BinsRangeChart({
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const dividerPrice = useCallback(() => {
-    // Calculate index based on the new slider range (0 to bins + 1)
-    // Ensure the index is within bounds of the data array
     const ratio = dividerPosition / (bins + 1);
     const index = Math.min(Math.floor(data.length * ratio), data.length - 1);
     return data[index]?.price;
@@ -103,7 +101,7 @@ export default function BinsRangeChart({
             const price = item.price;
             return price < dividerPriceValue
               ? item.value.token1
-              : item.value.token0;
+              : item.value.token0 * price;
           }),
           barWidth: "60%",
           itemStyle: {

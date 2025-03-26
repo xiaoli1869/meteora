@@ -72,6 +72,7 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
     { token0: number; token1: number }[]
   >([]);
   const [binsX, setBinsX] = useState<number[]>([]);
+  const [isSecendAmountChange, setIsSecendAmountChange] = useState(false);
   const [dividerPosition, setDividerPosition] = useState<number>(
     Math.ceil(numBins / 2)
   );
@@ -129,21 +130,30 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
       Number(firstTokenAmount),
       Number(secondTokenAmount),
       currentPrice,
-      volatilityStrategy
+      volatilityStrategy,
+      autoFill,
+      isSecendAmountChange
     );
     setPriceAllocations(allocations);
 
     // 将分配数据传递给图表
-    // console.log("Price Allocations:", allocations);
+    console.log("Price Allocations:", allocations);
     // 计算token0和token1的总和
-    const token0Total = priceAllocations.reduce(
+    const token0Total = allocations.reduce(
       (sum, allocation) => sum + allocation.token0,
       0
     );
-    const token1Total = priceAllocations.reduce(
+    const token1Total = allocations.reduce(
       (sum, allocation) => sum + allocation.token1,
       0
     );
+    if (autoFill) {
+      if (isSecendAmountChange) {
+        setFirstTokenAmount(token0Total.toFixed(6));
+      } else {
+        setSecondTokenAmount(token1Total.toFixed(6));
+      }
+    }
     console.log("Token0 Total:", token0Total);
     console.log("Token1 Total:", token1Total);
   }, [
@@ -151,14 +161,18 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
     secondTokenAmount,
     dividerPosition,
     volatilityStrategy,
+    autoFill,
+    isSecendAmountChange,
   ]);
   const handleFirstTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value) || 0;
     setFirstTokenAmount(value.toString());
+    setIsSecendAmountChange(false);
   };
   const handleSecondTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSecondTokenAmount(value);
+    setIsSecendAmountChange(true);
   };
 
   const handleResetPrice = () => {
@@ -181,7 +195,7 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
     setSecondTokenAmount(token1Balance.toString());
   };
   const hasDepositAmount = useMemo(
-    () => !!firstTokenAmount || !!secondTokenAmount,
+    () => Number(firstTokenAmount) || Number(secondTokenAmount),
     [firstTokenAmount, secondTokenAmount]
   );
   const volatilityStrategyList = [

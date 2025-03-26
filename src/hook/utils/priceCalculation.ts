@@ -89,13 +89,14 @@ export function calculateTokenAllocation(
   firstTokenAmount: number, // token0数量（如TRUMP）
   secondTokenAmount: number, // token1数量（如USDC）
   currentPrice: number, // 当前价格（USDC/TRUMP）
-  strategy: string = "spot" // 分配策略
+  strategy: string = "spot", // 分配策略
+  autoFill: boolean = false, // 新增参数，启用auto-fill模式
+  isSecendAmountChange: boolean = false // 新增参数，启用auto-fill模式
 ): Array<{ token0: number; token1: number }> {
-  if (prices.length === 0 || (firstTokenAmount <= 0 && secondTokenAmount <= 0))
-    return [];
-
+  if (prices.length === 0) return [];
   // 1. 计算权重分布
   const weights = calculateWeights(prices, currentPrice, strategy);
+
   const currentIndex = prices.findIndex((p) => p >= currentPrice);
 
   // 2. 分别计算左右两侧的权重总和
@@ -105,26 +106,52 @@ export function calculateTokenAllocation(
   const totalLeftWeight = leftWeights.reduce((a, b) => a + b, 0);
   const totalRightWeight = rightWeights.reduce((a, b) => a + b, 0);
 
+  // 如果启用autoFill模式，根据参数决定计算方式
+  let calculatedSecondTokenAmount = secondTokenAmount;
+  let calculatedFirstTokenAmount = firstTokenAmount;
+
+  if (autoFill) {
+    if (!isSecendAmountChange && firstTokenAmount > 0) {
+      // 根据token0数量和当前价格自动计算token1数量
+      // 计算右侧token0的总价值（以token1计价）
+      const rightSideValue = firstTokenAmount * currentPrice;
+      // 根据权重比例，计算左侧应该分配的token1数量
+      calculatedSecondTokenAmount =
+        totalLeftWeight > 0
+          ? rightSideValue * (totalLeftWeight / totalRightWeight)
+          : 0;
+    } else if (isSecendAmountChange && secondTokenAmount > 0) {
+      // 根据token1数量和当前价格自动计算token0数量
+      // 计算左侧token1的总价值（以token0计价）
+      const leftSideValue = secondTokenAmount / currentPrice;
+      // 根据权重比例，计算右侧应该分配的token0数量
+      calculatedFirstTokenAmount =
+        totalRightWeight > 0
+          ? leftSideValue * (totalRightWeight / totalLeftWeight)
+          : 0;
+    }
+  }
+
   // 3. 遍历每个价格区间分配代币
   return prices.map((price, index) => {
     if (index < currentIndex) {
       // 价格低于当前价格，只使用token1
-      if (totalLeftWeight <= 0 || secondTokenAmount <= 0) {
+      if (totalLeftWeight <= 0 || calculatedSecondTokenAmount <= 0) {
         return { token0: 0, token1: 0 };
       }
       const token1Amount =
-        secondTokenAmount * (weights[index] / totalLeftWeight);
+        calculatedSecondTokenAmount * (weights[index] / totalLeftWeight);
       return {
         token0: 0,
         token1: formatPrice(token1Amount),
       };
     } else if (index > currentIndex) {
       // 价格高于当前价格，只使用token0
-      if (totalRightWeight <= 0 || firstTokenAmount <= 0) {
+      if (totalRightWeight <= 0 || calculatedFirstTokenAmount <= 0) {
         return { token0: 0, token1: 0 };
       }
       const token0Amount =
-        firstTokenAmount * (weights[index] / totalRightWeight);
+        calculatedFirstTokenAmount * (weights[index] / totalRightWeight);
       return {
         token0: formatPrice(token0Amount),
         token1: 0,
@@ -139,8 +166,8 @@ export function calculateTokenAllocation(
         totalLeftWeight > 0 ? weights[index] / (2 * totalLeftWeight) : 0;
 
       return {
-        token0: formatPrice(firstTokenAmount * token0Portion),
-        token1: formatPrice(secondTokenAmount * token1Portion),
+        token0: formatPrice(calculatedFirstTokenAmount * token0Portion),
+        token1: formatPrice(calculatedSecondTokenAmount * token1Portion),
       };
     }
   });
