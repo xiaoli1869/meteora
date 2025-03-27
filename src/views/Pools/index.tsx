@@ -59,7 +59,7 @@ const CryptoPool = () => {
             token: MTB,
           },
           poolAddress: MTA_MTB_Pool,
-          binstep: 10,
+          binstep: 100,
           positions: [
             // {
             //   id: "pos-1",

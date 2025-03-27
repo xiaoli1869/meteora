@@ -9,7 +9,7 @@ import curveSvg from "@/assets/svg/pools/curve.svg";
 import curveASvg from "@/assets/svg/pools/curve-active.svg";
 import bidAskSvg from "@/assets/svg/pools/bidAsk.svg";
 import bidAskASvg from "@/assets/svg/pools/bidAsk-active.svg";
-import { Button, Input } from "antd";
+import { Button, Input, message } from "antd";
 import { useStore } from "../../../store";
 import { getCurrencyBalance } from "../../../hook/web3/libs/balance";
 import { getProvider } from "../../../hook/web3/web3Service";
@@ -19,7 +19,6 @@ import {
 } from "../../../hook/utils/addressFormat";
 import { getPoolInfo } from "../../../hook/web3/libs/pool";
 import {
-  getPriceRangeFromBin,
   priceToTick,
   sqrtPriceX96ToPrice,
 } from "../../../hook/web3/libs/conversion";
@@ -270,8 +269,8 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
           // 转换价格区间为 tick
           const priceLower = binsX[index];
           const priceUpper = binsX[index + 1];
-          const tickLower = priceToTick(priceLower);
-          const tickUpper = priceToTick(priceUpper);
+          const tickLower = priceToTick(priceLower, poolInfo.tickSpacing);
+          const tickUpper = priceToTick(priceUpper, poolInfo.tickSpacing);
           return {
             token0: token0.token.address,
             token1: token1.token.address,
@@ -305,9 +304,9 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
       const tx = await PoolsContract().batchMintLP(mintParams, basicParams);
       await tx.wait();
       // // 可选：交易成功后的状态更新或提示
-      console.log("Liquidity added successfully");
+      message.success("Liquidity added successfully");
     } catch (error) {
-      console.error("Failed to add liquidity:", error);
+      message.error("Failed to add liquidity:" + error);
       // 此处可添加错误提示逻辑
     } finally {
       setLoading(false);

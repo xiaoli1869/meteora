@@ -61,41 +61,13 @@ export function tickToPrice(tick: number): number {
  * @param price The price value to convert to a tick
  * @returns The tick value corresponding to the price
  */
-export function priceToTick(price: number): number {
-  // In Uniswap V3, tick = log(price) / log(1.0001)
-  return Math.floor(Math.log(price) / Math.log(1.0001));
-}
+export function priceToTick(price: number, tickSpacing: number): number {
+  // 1. 计算原始 tick（向下取整）
+  const rawTick = Math.floor(Math.log(price) / Math.log(1.0001));
 
-/**
- * Calculates price range based on current price and bin range
- * @param currentPrice The current price value
- * @param bin The bin value (e.g., 69)
- * @param tickSpacing The tick spacing from the pool (optional)
- * @returns An object containing minPrice and maxPrice
- */
-export function getPriceRangeFromBin(
-  currentPrice: number,
-  bin: number,
-  tickSpacing?: number
-): { minPrice: number; maxPrice: number } {
-  let currentTick: number;
-  if (currentPrice >= 0.9) {
-    currentTick = priceToTick(currentPrice);
-  } else {
-    currentTick = currentPrice;
-  }
+  // 2. 根据 tickSpacing 对齐到最近的合法 tick
+  // 规则：adjustedTick 必须是 tickSpacing 的整数倍，且是小于等于 rawTick 的最接近值
+  const adjustedTick = Math.floor(rawTick / tickSpacing) * tickSpacing;
 
-  let lowerTick = currentTick - Math.floor(bin / 2);
-  let upperTick = currentTick + Math.floor(bin / 2);
-
-  if (tickSpacing) {
-    lowerTick = Math.floor(lowerTick / tickSpacing) * tickSpacing;
-    upperTick = Math.ceil(upperTick / tickSpacing) * tickSpacing;
-  }
-
-  // Convert ticks to prices
-  const minPrice = tickToPrice(lowerTick);
-  const maxPrice = tickToPrice(upperTick);
-
-  return { minPrice, maxPrice };
+  return adjustedTick;
 }
