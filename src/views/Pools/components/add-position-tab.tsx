@@ -136,8 +136,6 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
     );
     setPriceAllocations(allocations);
 
-    // 将分配数据传递给图表
-    // console.log("Price Allocations:", allocations);
     // 计算token0和token1的总和
     const token0Total = allocations.reduce(
       (sum, allocation) => sum + allocation.token0,
@@ -154,8 +152,6 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
         setSecondTokenAmount(token1Total.toFixed(6));
       }
     }
-    // console.log("Token0 Total:", token0Total);
-    // console.log("Token1 Total:", token1Total);
   }, [
     firstTokenAmount,
     secondTokenAmount,
@@ -244,7 +240,6 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   const handleAddLiquidity = async () => {
     try {
       setLoading(true);
-
       const approveToken0 = await new ethers.Contract(
         token0.token.address,
         ERC20_ABI,
@@ -263,7 +258,6 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
       );
       await approveToken0.wait();
       await approveToken1.wait();
-
       // 构造 MintParams 数组
       const mintParams = binsX
         .slice(0, -1)
@@ -271,16 +265,13 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
           const allocation = priceAllocations[index];
           const token0Amt = allocation.token0;
           const token1Amt = allocation.token1;
-
           // 跳过无分配的区间
           if (token0Amt <= 0 && token1Amt <= 0) return null;
-
           // 转换价格区间为 tick
           const priceLower = binsX[index];
           const priceUpper = binsX[index + 1];
           const tickLower = priceToTick(priceLower);
           const tickUpper = priceToTick(priceUpper);
-
           return {
             token0: token0.token.address,
             token1: token1.token.address,
@@ -301,7 +292,6 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
           };
         })
         .filter((param) => param !== null);
-
       // 构造 BasicParams
       const basicParams = {
         caller: Store.walletInfo.address,
@@ -314,7 +304,6 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
       // 调用合约批量添加流动性
       const tx = await PoolsContract().batchMintLP(mintParams, basicParams);
       await tx.wait();
-
       // // 可选：交易成功后的状态更新或提示
       console.log("Liquidity added successfully");
     } catch (error) {
