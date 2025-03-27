@@ -314,7 +314,6 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   };
   return (
     <div className="py-4">
-      {/* Deposit Amount Section */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <span className="text-white">Enter deposit amount:</span>
