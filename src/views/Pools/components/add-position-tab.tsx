@@ -137,7 +137,7 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
     setPriceAllocations(allocations);
 
     // 将分配数据传递给图表
-    console.log("Price Allocations:", allocations);
+    // console.log("Price Allocations:", allocations);
     // 计算token0和token1的总和
     const token0Total = allocations.reduce(
       (sum, allocation) => sum + allocation.token0,
@@ -154,8 +154,8 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
         setSecondTokenAmount(token1Total.toFixed(6));
       }
     }
-    console.log("Token0 Total:", token0Total);
-    console.log("Token1 Total:", token1Total);
+    // console.log("Token0 Total:", token0Total);
+    // console.log("Token1 Total:", token1Total);
   }, [
     firstTokenAmount,
     secondTokenAmount,
@@ -242,64 +242,87 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   };
   const handelNumBinsChange = (e: any) => {};
   const handleAddLiquidity = async () => {
-    // const poolInfo = await getPoolInfo(pool.poolAddress);
-    // const tick = poolInfo.tick;
-    // const tickSpacing = poolInfo.tickSpacing;
-    // setLoading(true);
-    // const firstTokenAmount = 1000000;
-    // const secondTokenAmount = 1000000;
-    // const approveToken0 = await new ethers.Contract(
-    //   token0.token.address,
-    //   ERC20_ABI,
-    //   getProvider().getSigner()
-    // ).approve(
-    //   PoolsContract().address,
-    //   parseUnitsDecimal(String(firstTokenAmount), token0.token.decimals)
-    // );
-    // const approveToken1 = await new ethers.Contract(
-    //   token1.token.address,
-    //   ERC20_ABI,
-    //   getProvider().getSigner()
-    // ).approve(
-    //   PoolsContract().address,
-    //   parseUnitsDecimal(String(secondTokenAmount), token1.token.decimals)
-    // );
-    // await approveToken0.wait();
-    // await approveToken1.wait();
-    // // // 需要将金额转换为正确的BigNumber格式
-    // const token0Amount = parseUnitsDecimal(
-    //   String(firstTokenAmount),
-    //   token0.token.decimals
-    // );
-    // const token1Amount = parseUnitsDecimal(
-    //   String(secondTokenAmount),
-    //   token1.token.decimals
-    // );
-    // const rea = await PoolsContract().batchMintLP(
-    //   [
-    //     {
-    //       token0: token0.token.address,
-    //       token1: token1.token.address,
-    //       fee: 3000,
-    //       token0Amount: token0Amount.toString(), // 确保转换为字符串
-    //       token1Amount: token1Amount.toString(), // 确保转换为字符串
-    //       tickLower: tick - tickSpacing * 1,
-    //       tickUpper: tick + tickSpacing * 1,
-    //       amount0Min: 0, // 确保转换为字符串
-    //       amount1Min: 0, // 确保转换为字符串
-    //       recipient: Store.walletInfo.address,
-    //     },
-    //   ],
-    //   {
-    //     caller: Store.walletInfo.address,
-    //     token0: token0.token.address,
-    //     token1: token1.token.address,
-    //     deposit0: token0Amount.toString(), // 确保转换为字符串
-    //     deposit1: token1Amount.toString(), // 确保转换为字符串
-    //   }
-    // );
-    // console.log(rea);
-    // setLoading(false);
+    try {
+      setLoading(true);
+
+      const approveToken0 = await new ethers.Contract(
+        token0.token.address,
+        ERC20_ABI,
+        getProvider().getSigner()
+      ).approve(
+        PoolsContract().address,
+        parseUnitsDecimal(String(firstTokenAmount), token0.token.decimals)
+      );
+      const approveToken1 = await new ethers.Contract(
+        token1.token.address,
+        ERC20_ABI,
+        getProvider().getSigner()
+      ).approve(
+        PoolsContract().address,
+        parseUnitsDecimal(String(secondTokenAmount), token1.token.decimals)
+      );
+      await approveToken0.wait();
+      await approveToken1.wait();
+
+      // 构造 MintParams 数组
+      const mintParams = binsX
+        .slice(0, -1)
+        .map((_, index) => {
+          const allocation = priceAllocations[index];
+          const token0Amt = allocation.token0;
+          const token1Amt = allocation.token1;
+
+          // 跳过无分配的区间
+          if (token0Amt <= 0 && token1Amt <= 0) return null;
+
+          // 转换价格区间为 tick
+          const priceLower = binsX[index];
+          const priceUpper = binsX[index + 1];
+          const tickLower = priceToTick(priceLower);
+          const tickUpper = priceToTick(priceUpper);
+
+          return {
+            token0: token0.token.address,
+            token1: token1.token.address,
+            fee: poolInfo.fee, // 确保 poolInfo 包含 fee 字段
+            tickLower,
+            tickUpper,
+            token0Amount: parseUnitsDecimal(
+              token0Amt.toString(),
+              token0.token.decimals
+            ),
+            token1Amount: parseUnitsDecimal(
+              token1Amt.toString(),
+              token1.token.decimals
+            ),
+            amount0Min: 0, // 滑点控制可在此处调整
+            amount1Min: 0,
+            recipient: Store.walletInfo.address,
+          };
+        })
+        .filter((param) => param !== null);
+
+      // 构造 BasicParams
+      const basicParams = {
+        caller: Store.walletInfo.address,
+        token0: token0.token.address,
+        token1: token1.token.address,
+        deposit0: parseUnitsDecimal(firstTokenAmount, token0.token.decimals),
+        deposit1: parseUnitsDecimal(secondTokenAmount, token1.token.decimals),
+      };
+      console.log(mintParams, basicParams);
+      // 调用合约批量添加流动性
+      const tx = await PoolsContract().batchMintLP(mintParams, basicParams);
+      await tx.wait();
+
+      // // 可选：交易成功后的状态更新或提示
+      console.log("Liquidity added successfully");
+    } catch (error) {
+      console.error("Failed to add liquidity:", error);
+      // 此处可添加错误提示逻辑
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="py-4">
