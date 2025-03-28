@@ -7,7 +7,6 @@ import { ExpandedPanelProps } from "../type";
 // Using types from type.ts
 
 export const ExpandedPanel: React.FC<ExpandedPanelProps> = ({ pool }) => {
-  const { pairName, token0, token1, positions } = pool;
   const [activeTab, setActiveTab] = useState<"positions" | "add">("positions");
 
   return (
@@ -52,8 +51,7 @@ export const ExpandedPanel: React.FC<ExpandedPanelProps> = ({ pool }) => {
 
       {activeTab === "positions" ? (
         <YourPositionsTab
-          pairName={pairName}
-          positions={positions}
+          pool={pool}
           onOpenAddPosition={() => setActiveTab("add")}
         />
       ) : (

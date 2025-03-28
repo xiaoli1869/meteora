@@ -82,8 +82,7 @@ export interface ExpandedPanelProps {
 }
 
 export interface YourPositionsTabProps {
-  pairName: string;
-  positions?: Position[];
+  pool: PoolItem;
   onOpenAddPosition: () => void;
 }
 

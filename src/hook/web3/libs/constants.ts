@@ -5,7 +5,7 @@ import { Token } from "@uniswap/sdk-core";
 // Addresses
 
 export const NONFUNGIBLE_POSITION_MANAGER_CONTRACT_ADDRESS =
-  "0x1238536071E1c677A632429e3655c799b22cDA52";
+  "0x3dCc735C74F10FE2B9db2BB55C40fbBbf24490f7";
 export const LPLContractAddress = "0x56A7380622a7ee604CE232Cc32D8870a2Fd4Ad13";
 export const StakeToSTContractAddress =
   "0xF9D4598b7b455C352E6729848C24D4C2120E3835";
