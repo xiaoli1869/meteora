@@ -75,3 +75,7 @@
 .ant-slider:hover .ant-slider-track {
     background: rgba(0, 0, 0, 0.3);
 }
+
+.ant-input-outlined.ant-input-disabled {
+    color: white;
+}

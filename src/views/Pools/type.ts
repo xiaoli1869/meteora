@@ -1,6 +1,7 @@
 // Common types for Pools components
 
 import { Token } from "@uniswap/sdk-core";
+import { PoolInfo } from "../../hook/web3/libs/pool";
 
 export interface Position {
   id: string;
@@ -8,27 +9,42 @@ export interface Position {
     min: string;
     max: string;
   };
-  tokenPair: {
+  tokenPair?: {
     base: string;
     quote: string;
   };
-  fee: string;
-  liquidity: string;
-  rangePercentage: number;
-  hasWarning?: boolean;
-  balances?: {
-    baseAmount: string;
-    baseValue: string;
-    quoteAmount: string;
-    quoteValue: string;
+  fee: string | number;
+  totalValue?: number;
+  totalToken0Value?: number;
+  totalToken1Value?: number;
+  totalToken0Amount?: number;
+  totalToken1Amount?: number;
+  totalToken0ClaimAmount?: number;
+  totalToken0ClaimValue?: number;
+  totalToken1ClaimAmount?: number;
+  totalToken1ClaimValue?: number;
+  liquidity?: string;
+  currentPrice?: number;
+  lpList?: Position[];
+  minPrice?: number;
+  token0?: {
+    icon: string;
+    symbol: string;
+    token: Token;
+    amount: string | number;
+    value: string | number;
+    claimFeeAmount: string | number;
+    claimFeeValue: string | number;
   };
-  unclaimedFees?: {
-    baseAmount: string;
-    baseValue: string;
-    quoteAmount: string;
-    quoteValue: string;
+  token1?: {
+    icon: string;
+    symbol: string;
+    token: Token;
+    amount: string | number;
+    value: string | number;
+    claimFeeAmount: string | number;
+    claimFeeValue: string | number;
   };
-  currentPrice?: string;
 }
 
 export interface PoolItem {
@@ -36,45 +52,23 @@ export interface PoolItem {
   pairName: string;
   position: string;
   poolAddress: string;
+  numBins: number;
   token0: {
     icon: string;
     symbol: string;
     token: Token;
+    balance: number;
   };
   token1: {
     icon: string;
     symbol: string;
     token: Token;
+    balance: number;
   };
   binstep: number;
-  positions?: {
-    id: string;
-    priceRange: {
-      min: string;
-      max: string;
-    };
-    tokenPair: {
-      base: string;
-      quote: string;
-    };
-    fee: string;
-    liquidity: string;
-    rangePercentage: number;
-    hasWarning?: boolean;
-    balances: {
-      baseAmount: string;
-      baseValue: string;
-      quoteAmount: string;
-      quoteValue: string;
-    };
-    unclaimedFees: {
-      baseAmount: string;
-      baseValue: string;
-      quoteAmount: string;
-      quoteValue: string;
-    };
-    currentPrice: string;
-  }[];
+  positions?: Position[];
+  info: null | PoolInfo;
+  currentPrice: number;
 }
 
 export interface ExpandedPanelProps {
@@ -92,4 +86,5 @@ export interface AddPositionTabProps {
 
 export interface PositionDetailsProps {
   position: Position;
+  pool: PoolItem;
 }

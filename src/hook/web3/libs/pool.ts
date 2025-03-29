@@ -3,7 +3,7 @@ import { CurrentConfig } from "../config";
 import IUniswapV3PoolABI from "@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json";
 import { getProvider } from "../web3Service";
 
-interface PoolInfo {
+export interface PoolInfo {
   token0: string;
   token1: string;
   fee: number;

@@ -11,17 +11,12 @@ import bidAskSvg from "@/assets/svg/pools/bidAsk.svg";
 import bidAskASvg from "@/assets/svg/pools/bidAsk-active.svg";
 import { Button, Input, message } from "antd";
 import { useStore } from "../../../store";
-import { getCurrencyBalance } from "../../../hook/web3/libs/balance";
 import { getProvider } from "../../../hook/web3/web3Service";
 import {
   parseUnitsDecimal,
   thousandSeparator,
 } from "../../../hook/utils/addressFormat";
-import { getPoolInfo } from "../../../hook/web3/libs/pool";
-import {
-  priceToTick,
-  sqrtPriceX96ToPrice,
-} from "../../../hook/web3/libs/conversion";
+import { priceToTick } from "../../../hook/web3/libs/conversion";
 import { PoolsContract } from "../../../hook/web3/apeContract";
 import { ethers } from "ethers";
 import { ERC20_ABI } from "../../../hook/web3/libs/constants";
@@ -35,7 +30,29 @@ import {
 // Using types from type.ts
 
 const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
-  const { pairName, token0, token1 } = pool;
+  const pairName = useMemo(() => {
+    return pool.pairName || "";
+  }, [pool]);
+  const poolInfo = useMemo(() => {
+    return (
+      pool.info || {
+        tickSpacing: 0,
+        fee: 0,
+      }
+    );
+  }, [pool]);
+  const token0 = useMemo(() => {
+    return pool.token0;
+  }, [pool]);
+  const token1 = useMemo(() => {
+    return pool.token1;
+  }, [pool]);
+  const numBins = useMemo(() => {
+    return pool.numBins || 0;
+  }, [pool]);
+  const currentPrice = useMemo(() => {
+    return pool.currentPrice || 0;
+  }, [pool]);
   const { Store } = useStore();
   // 是否自动填充
   const [autoFill, setAutoFill] = useState(false);
@@ -45,12 +62,6 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   const [firstTokenAmount, setFirstTokenAmount] = useState<string>("");
   // 第二个代币输入金额
   const [secondTokenAmount, setSecondTokenAmount] = useState<string>("");
-  // token0余额
-  const [token0Balance, setToken0Balance] = useState<number>(0);
-  // token1余额
-  const [token1Balance, setToken1Balance] = useState<number>(0);
-  // 当前价格token1/token0
-  const [currentPrice, setCurrentPrice] = useState<number>(0); // Mock current price
   // 最小价格
   const [minPrice, setMinPrice] = useState<number>(0);
   // 最大价格
@@ -62,9 +73,7 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   // 加载状态
   const [loading, setLoading] = useState<boolean>(false);
   // bin数量
-  const [numBins, setNumBins] = useState<number>(69); // Default number of bins
-  // 池子信息
-  const [poolInfo, setPoolInfo] = useState<any>(null);
+  // const [numBins, setNumBins] = useState<number>(69); // Default number of bins
   // 代币对名称分割
   const [firstToken, secondToken] = pairName.split("-");
   const [priceAllocations, setPriceAllocations] = useState<
@@ -75,29 +84,6 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   const [dividerPosition, setDividerPosition] = useState<number>(
     Math.ceil(numBins / 2)
   );
-  useEffect(() => {
-    init();
-  }, [pool.poolAddress, Store.walletInfo.address]);
-  const init = async () => {
-    const poolInfo = await getPoolInfo(pool.poolAddress);
-    setPoolInfo(poolInfo);
-    setCurrentPrice(Number(sqrtPriceX96ToPrice(poolInfo.sqrtPriceX96)));
-    // 获取余额
-    getCurrencyBalance(
-      getProvider(),
-      Store.walletInfo.address,
-      token0.token
-    ).then((res) => {
-      setToken0Balance(Number(res || 0));
-    });
-    getCurrencyBalance(
-      getProvider(),
-      Store.walletInfo.address,
-      token1.token
-    ).then((res) => {
-      setToken1Balance(Number(res || 0));
-    });
-  };
 
   const handleDividerPositionChange = (value: number) => {
     setDividerPosition(value);
@@ -175,19 +161,19 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
   };
 
   const handleHalfFirstToken = () => {
-    setFirstTokenAmount((token0Balance / 2).toString());
+    setFirstTokenAmount((token0.balance / 2).toString());
   };
 
   const handleMaxFirstToken = () => {
-    setFirstTokenAmount(token0Balance.toString());
+    setFirstTokenAmount(token0.balance.toString());
   };
 
   const handleHalfSecondToken = () => {
-    setSecondTokenAmount((token1Balance / 2).toString());
+    setSecondTokenAmount((token0.balance / 2).toString());
   };
 
   const handleMaxSecondToken = () => {
-    setSecondTokenAmount(token1Balance.toString());
+    setSecondTokenAmount(token1.balance.toString());
   };
   const hasDepositAmount = useMemo(
     () => Number(firstTokenAmount) || Number(secondTokenAmount),
@@ -354,7 +340,7 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
             </div>
             <div className="flex justify-between items-center px-1">
               <span className="text-gray-400 text-sm">
-                Balance: {thousandSeparator(token0Balance)}
+                Balance: {thousandSeparator(token0.balance)}
               </span>
               <div className="flex space-x-2">
                 <button
@@ -394,7 +380,7 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
             </div>
             <div className="flex justify-between items-center px-1">
               <span className="text-gray-400 text-sm">
-                Balance: {thousandSeparator(token1Balance)}
+                Balance: {thousandSeparator(token1.balance)}
               </span>
               <div className="flex space-x-2">
                 <button
@@ -522,12 +508,14 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
                     className="bg-transparent text-white text-lg w-1/2 border-none hover:bg-transparent focus:outline-none focus:bg-transparent focus:border-none focus:shadow-none"
                     value={minPrice}
                     onChange={handelMinPriceChange}
+                    disabled
                   />
                   <span className="w-1/2 text-right flex items-center">
                     <Input
                       className="bg-transparent text-right text-white text-lg border-none hover:bg-transparent focus:outline-none focus:bg-transparent focus:border-none focus:shadow-none"
                       value={pricePercentageMin}
                       onChange={handelPricePercentageMinChange}
+                      disabled
                     />
                     %
                   </span>
@@ -541,12 +529,14 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
                     className="bg-transparent text-white text-lg w-1/2 border-none hover:bg-transparent focus:outline-none focus:bg-transparent focus:border-none focus:shadow-none"
                     value={maxPrice}
                     onChange={handelMaxPriceChange}
+                    disabled
                   />
                   <span className="w-1/2 text-right flex items-center">
                     <Input
                       className="bg-transparent text-right text-white text-lg border-none hover:bg-transparent focus:outline-none focus:bg-transparent focus:border-none focus:shadow-none"
                       value={pricePercentageMax}
                       onChange={handelPricePercentageMaxChange}
+                      disabled
                     />
                     %
                   </span>
@@ -571,10 +561,12 @@ const AddPositionTab: React.FC<AddPositionTabProps> = ({ pool }) => {
       {/* Add Liquidity Button */}
       <Button
         loading={loading}
+        className={hasDepositAmount ? "hover:opacity-80" : ""}
         style={{
           width: "100%",
           backgroundColor: hasDepositAmount ? "#dc2626" : "#4B5563",
           color: "#fff",
+          border: "none",
           padding: "1rem 0",
           borderRadius: "0.375rem",
           fontWeight: 500,
